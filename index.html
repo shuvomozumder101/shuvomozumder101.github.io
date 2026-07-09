@@ -1,0 +1,2563 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shobo Mozumder | 3D Interactive Portfolio Book</title>
+  
+  <!-- Tailwind CSS for modern layouts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons for symbols -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts for typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght=0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+            cinzel: ['Cinzel', 'serif'],
+          },
+          colors: {
+            luxury: {
+              gold: '#D4AF37',
+              goldHover: '#AA7C11',
+              darkBg: '#090a0f',
+              paperLight: '#fbf9f3',
+              paperDark: '#1a1c23',
+              navyCover: '#162333',
+              crimsonCover: '#420d0d',
+              forestCover: '#0a1f14',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      overflow-x: hidden;
+      /* FIX: Changed touch-action from 'pan-y' to 'pan-y pinch-zoom' to enable pinch zooming on mobile */
+      touch-action: pan-y pinch-zoom;
+    }
+
+    :root {
+      --book-width: 90vw;
+      --book-height: 58vw;
+      --max-width: 1000px;
+      --max-height: 620px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @media (min-width: 1024px) {
+      :root {
+        --book-width: 1000px;
+        --book-height: 620px;
+      }
+    }
+
+    /* Core book spine container with perspective lock */
+    .perspective-container {
+      perspective: 2500px;
+      perspective-origin: 50% 50%;
+      transform-style: preserve-3d;
+      width: var(--book-width);
+      max-width: var(--max-width);
+      height: var(--book-height);
+      max-height: var(--max-height);
+      position: relative;
+      transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .book {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* Dynamic Spine Alignment anchor */
+    .book-spine {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 28px;
+      height: 100%;
+      transform: translateX(-50%) translateZ(-14px) rotateY(90deg);
+      background: linear-gradient(90deg, #0a0a0c 0%, #2a2a30 50%, #0a0a0c 100%);
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+      z-index: 100;
+    }
+
+    /* Physical Page Sheet - strictly anchored to the spine */
+    .sheet {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 50%;
+      height: 100%;
+      transform-origin: left center;
+      transform-style: preserve-3d;
+      transition: transform 1.3s cubic-bezier(0.23, 1, 0.32, 1);
+      z-index: 10;
+      pointer-events: auto;
+    }
+
+    .sheet.flipped {
+      transform: rotateY(-180deg);
+    }
+
+    /* Absolute stacking prevents elements from sliding down */
+    .page-face {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      backface-visibility: hidden !important;
+      -webkit-backface-visibility: hidden !important;
+      overflow: hidden;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.08);
+      border-radius: 0 12px 12px 0;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      cursor: default;
+    }
+
+    /* Target direct copy nodes to present standard text interaction triggers */
+    .page-face p, .page-face span, .page-face h1, .page-face h2, .page-face h3, .page-face h4, .page-face h5, .page-face h6, .page-face li, .page-face td {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      cursor: text;
+    }
+
+    /* Keep cover pages fully grab-and-turn intuitive */
+    #coverFront, #coverFront *, .page-face.back:last-child, .page-face.back:last-child * {
+      cursor: grab;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+    #coverFront:active, .page-face.back:last-child:active {
+      cursor: grabbing;
+    }
+
+    /* Front side of page sheet (facing right initially) */
+    .page-face.front {
+      transform: rotateY(0deg) !important;
+      z-index: 2;
+    }
+
+    /* Back side of page sheet (facing left after rotation) */
+    .page-face.back {
+      transform: rotateY(180deg) !important;
+      z-index: 1;
+      border-radius: 12px 0 0 12px;
+    }
+
+    /* Page depth styling (stacked sheets edge effect) */
+    .page-depth-right {
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1), 3px 0 0 -1px #ddd, 5px 0 0 -2px #cfcfcf, 7px 0 0 -3px #bebebe;
+    }
+    .page-depth-left {
+      box-shadow: -2px 0 5px rgba(0,0,0,0.1), -3px 0 0 -1px #ddd, -5px 0 0 -2px #cfcfcf, -7px 0 0 -3px #bebebe;
+    }
+
+    /* Inner fold shadows near the spine - pointer-events: none prevents blocking text interaction */
+    .crease-shadow-right {
+      background: linear-gradient(to right, rgba(0, 0, 0, 0.22) 0%, rgba(0,0,0,0.03) 6%, transparent 100%);
+      pointer-events: none !important;
+    }
+    .crease-shadow-left {
+      background: linear-gradient(to left, rgba(0, 0, 0, 0.22) 0%, rgba(0,0,0,0.03) 6%, transparent 100%);
+      pointer-events: none !important;
+    }
+
+    /* Glare overlay simulating physical page turning reflection */
+    .light-glare {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      mix-blend-mode: overlay;
+      opacity: 0;
+      transition: opacity 1.3s ease;
+    }
+    .sheet.flipped .page-face.front .light-glare {
+      background: linear-gradient(to right, transparent 40%, rgba(255,255,255,0.08) 75%, rgba(0,0,0,0.2) 100%);
+      opacity: 0.25;
+    }
+
+    /* Premium design textures */
+    .gold-foil-text {
+      background: linear-gradient(135deg, #f5ecd1 0%, #D4AF37 50%, #aa7c11 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0px 1px 1px rgba(0, 0, 0, 0.2);
+    }
+
+    .paper-noise {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.032'/%3E%3C/svg%3E");
+    }
+
+    .leather-texture {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='leather'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%feColorMatrix type='matrix' values='0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23leather)' opacity='0.12'/%3E%3C/svg%3E");
+    }
+
+    @keyframes floatParticle {
+      0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.3; }
+      50% { transform: translateY(-30px) translateX(12px) scale(1.1); opacity: 0.6; }
+    }
+    .ambient-particle {
+      position: absolute;
+      background: radial-gradient(circle, rgba(212,175,55,0.3) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: floatParticle 9s infinite ease-in-out;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    /* Responsive Flat Scroll Book State on Mobile to ensure perfect readability */
+    @media (max-width: 767px) {
+      .perspective-container {
+        width: 100%;
+        height: auto;
+        max-height: none;
+        perspective: none;
+        transform: none !important;
+      }
+      .book {
+        position: relative;
+        transform: none !important;
+        height: auto;
+      }
+      .book-spine {
+        display: none;
+      }
+      .sheet {
+        position: relative;
+        left: 0;
+        width: 100%;
+        height: auto;
+        transform: none !important;
+        margin-bottom: 24px;
+        display: block;
+        z-index: auto !important;
+      }
+      .page-face {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 480px;
+        backface-visibility: visible !important;
+        -webkit-backface-visibility: visible !important;
+        transform: none !important;
+        border-radius: 8px !important;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      }
+      .page-face.back {
+        transform: none !important;
+      }
+      .crease-shadow-right, .crease-shadow-left {
+        display: none;
+      }
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printable-resume, #printable-resume * {
+        visibility: visible;
+      }
+      #printable-resume {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+    
+    .glass-card{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:16px;
+
+    padding:16px 20px;
+
+    border-radius:22px;
+
+    background:linear-gradient(
+        135deg,
+        rgba(255,255,255,.75),
+        rgba(255,255,255,.28)
+    );
+
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.75);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.8),
+        0 12px 35px rgba(148,163,184,.18);
+
+    transition:.35s;
+    }
+
+    .glass-card:hover{
+        transform:translateY(-5px);
+
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.9),
+            0 20px 45px rgba(99,102,241,.20);
+    }
+
+    .glass-icon{
+
+        width:40px;
+        height:30px;
+
+        border-radius:20%;
+
+        display:flex;
+        align-items:center;
+        justify-content:center;
+
+        background:linear-gradient(
+            145deg,
+            rgba(255,255,255,.85),
+            rgba(255,255,255,.35)
+        );
+
+        border:1px solid rgba(255,255,255,.85);
+
+        backdrop-filter:blur(12px);
+
+        box-shadow:
+            inset 0 1px 1px rgba(255,255,255,.8),
+            0 8px 18px rgba(99,102,241,.12);
+
+        font-size:24px;
+        color:#5b5cf0;
+    }
+
+    .glass-card span{
+
+        font-size:12px;
+        font-weight:600;
+        color:#24324a;
+        line-height:1;
+    }
+
+
+    .glass-panel{
+        position:relative;
+        padding:15px;
+    
+        border-radius:24px;
+    
+        background:
+            linear-gradient(
+                135deg,
+                rgba(255,255,255,.82),
+                rgba(255,255,255,.42)
+            );
+    
+        backdrop-filter:blur(22px);
+        -webkit-backdrop-filter:blur(22px);
+    
+        border:1px solid rgba(255,255,255,.85);
+    
+        box-shadow:
+            inset 0 1px 1px rgba(255,255,255,.9),
+            0 15px 35px rgba(148,163,184,.15);
+    
+        transition:.35s ease;
+    }
+    
+    .glass-panel:hover{
+    
+        transform:translateY(-4px);
+    
+        box-shadow:
+            inset 0 1px 1px rgba(255,255,255,.95),
+            0 20px 45px rgba(99,102,241,.18);
+    }
+    
+    
+    .glass-title{
+    
+        display:flex;
+        align-items:center;
+        gap:12px;
+    
+        font-size:16px;
+        font-weight:700;
+    
+        color:#111827;
+    
+        margin-bottom:22px;
+    }
+    
+    .glass-title-icon{
+    
+        width:50px;
+        height:20px;
+    
+        display:flex;
+        align-items:center;
+        justify-content:center;
+    
+        border-radius:16px;
+    
+        background:linear-gradient(
+            145deg,
+            rgba(255,255,255,.95),
+            rgba(255,255,255,.55)
+        );
+    
+        border:1px solid rgba(255,255,255,.9);
+    
+        color:#5b5cf0;
+    
+        font-size:16px;
+    
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.9),
+            0 8px 20px rgba(99,102,241,.12);
+    }
+    
+    .skill-name{
+        font-size:12px;
+        font-weight:300;
+        color:#1e293b;
+    }
+    
+    .skill-percent{
+        font-size:10px;
+        font-weight:400;
+        color:#374151;
+    }
+    
+    .skill-track{
+    
+        width:100%;
+        height:10px;
+    
+        overflow:hidden;
+    
+        border-radius:999px;
+    
+        background:#edf2f7;
+    
+        box-shadow:
+            inset 0 2px 4px rgba(0,0,0,.05);
+    }
+    
+    .skill-fill{
+    
+        height:100%;
+    
+        border-radius:999px;
+    
+        background:
+            linear-gradient(
+                90deg,
+                #3b46ff,
+                #7c4dff
+            );
+    
+        box-shadow:
+            0 0 12px rgba(99,102,241,.35);
+    }
+      /* ==========================================
+      PAGE 4 - Enterprise Projects
+      ========================================== */
+
+      .enterprise-card{
+          position:relative;
+          overflow:hidden;
+
+          padding:16px;
+
+          border-radius:18px;
+
+          background:
+              linear-gradient(
+                  135deg,
+                  rgba(255,255,255,.72),
+                  rgba(255,255,255,.35)
+              );
+
+          backdrop-filter:blur(14px);
+          -webkit-backdrop-filter:blur(14px);
+
+          border:1px solid rgba(255,255,255,.65);
+
+          box-shadow:
+              inset 0 1px 0 rgba(255,255,255,.85),
+              0 10px 22px rgba(99,102,241,.08);
+
+          transition:all .35s ease;
+      }
+
+      .enterprise-card:hover{
+      
+          transform:translateY(-3px);
+
+          box-shadow:
+              inset 0 1px 0 rgba(255,255,255,.9),
+              0 18px 35px rgba(99,102,241,.16);
+      }
+
+      /* Glass Reflection */
+
+      .enterprise-card::before{
+      
+          content:"";
+
+          position:absolute;
+
+          left:-40%;
+          top:-60%;
+
+          width:140%;
+          height:140%;
+
+          background:linear-gradient(
+              120deg,
+              transparent 25%,
+              rgba(255,255,255,.18) 45%,
+              transparent 70%
+          );
+
+          transform:rotate(-20deg);
+      }
+
+      /* ===========================
+         Header
+      =========================== */
+
+      .project-title{
+      
+          display:flex;
+          align-items:center;
+          gap:8px;
+
+          font-size:11px;
+          font-weight:700;
+
+          color:#1e293b;
+
+          text-transform:uppercase;
+      }
+
+      .project-title i{
+      
+          width:26px;
+          height:26px;
+
+          display:flex;
+          align-items:center;
+          justify-content:center;
+
+          border-radius:50%;
+
+          background:linear-gradient(
+              135deg,
+              #6366f1,
+              #8b5cf6
+          );
+
+          color:white;
+
+          font-size:11px;
+
+          box-shadow:0 5px 12px rgba(99,102,241,.25);
+      }
+
+      .project-title small{
+      
+          color:#94a3b8;
+
+          font-size:8px;
+
+          font-weight:500;
+      }
+
+      /* ===========================
+         Version Badge
+      =========================== */
+
+      .version-badge{
+      
+          padding:4px 10px;
+
+          border-radius:999px;
+
+          background:linear-gradient(
+              135deg,
+              #4f46e5,
+              #7c3aed
+          );
+
+          color:white;
+
+          font-size:7px;
+
+          font-weight:700;
+
+          letter-spacing:.5px;
+
+          box-shadow:
+              0 5px 12px rgba(99,102,241,.18);
+      }
+
+      /* ===========================
+         Section Heading
+      =========================== */
+
+      .section-heading{
+      
+          margin-top:12px;
+          margin-bottom:6px;
+
+          font-size:8px;
+
+          font-weight:700;
+
+          text-transform:uppercase;
+
+          letter-spacing:1px;
+
+          color:#4f46e5;
+      }
+
+      /* ===========================
+         Paragraph
+      =========================== */
+
+      .enterprise-card p{
+      
+          font-size:8.5px;
+
+          line-height:1.7;
+
+          color:#475569;
+
+          text-align:justify;
+      }
+
+      /* ===========================
+         Tech Chips
+      =========================== */
+
+      .tech-chip{
+
+          position: relative;
+
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+
+          padding: 5px 12px;
+
+          border-radius: 9999px;
+
+          overflow: hidden;
+
+          background: linear-gradient(
+              135deg,
+              rgba(255,255,255,.65),
+              rgba(255,255,255,.22)
+          );
+
+          border: 1px solid rgba(255,255,255,.65);
+
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+
+          box-shadow:
+              inset 0 1px 1px rgba(255,255,255,.9),
+              0 8px 18px rgba(99,102,241,.10);
+
+          color: #334155;
+
+          font-size: 8px;
+          font-weight: 600;
+
+          letter-spacing: .2px;
+
+          transition: all .3s ease;
+      }
+
+      /* Glass Shine */
+      .tech-chip::before{
+      
+          content:"";
+
+          position:absolute;
+
+          top:0;
+          left:10%;
+
+          width:80%;
+          height:45%;
+
+          border-radius:9999px;
+
+          background:linear-gradient(
+              to bottom,
+              rgba(255,255,255,.55),
+              transparent
+          );
+
+          pointer-events:none;
+      }
+
+      /* Hover */
+      .tech-chip:hover{
+      
+          transform:translateY(-2px) scale(1.03);
+
+          background:linear-gradient(
+              135deg,
+              rgba(255,255,255,.8),
+              rgba(255,255,255,.35)
+          );
+
+          box-shadow:
+              0 12px 24px rgba(99,102,241,.18),
+              inset 0 1px 1px rgba(255,255,255,.95);
+
+          color:#4f46e5;
+      }
+
+      /* ===========================
+         Divider
+      =========================== */
+
+      .enterprise-card hr{
+      
+          border:none;
+
+          height:1px;
+
+          margin:10px 0;
+
+          background:linear-gradient(
+              to right,
+              transparent,
+              rgba(99,102,241,.25),
+              transparent
+          );
+      }
+
+      /* ==========================================
+      Project Navigation
+      ========================================== */
+
+      .project-nav{
+      
+          display:flex;
+
+          flex-wrap:wrap;
+
+          gap:10px;
+
+          margin:14px 0 18px;
+      }
+
+
+      /* ==========================================
+         Project Button
+      ========================================== */
+
+      .project-tab{
+      
+          position:relative;
+
+          display:flex;
+
+          align-items:center;
+
+          gap:8px;
+
+          padding:7px 14px;
+
+          border:none;
+
+          cursor:pointer;
+
+          border-radius:999px;
+
+          background:
+              linear-gradient(
+                  135deg,
+                  rgba(255,255,255,.78),
+                  rgba(255,255,255,.35)
+              );
+
+          backdrop-filter:blur(14px);
+          -webkit-backdrop-filter:blur(14px);
+
+          border:1px solid rgba(255,255,255,.75);
+
+          color:#334155;
+
+          font-size:9px;
+
+          font-weight:600;
+
+          box-shadow:
+              inset 0 1px 0 rgba(255,255,255,.9),
+              0 8px 18px rgba(99,102,241,.08);
+
+          transition:.35s;
+
+          overflow:hidden;
+      }
+
+
+      /* Gloss Effect */
+
+      .project-tab::before{
+      
+          content:"";
+
+          position:absolute;
+
+          top:0;
+          left:10%;
+
+          width:80%;
+
+          height:45%;
+
+          border-radius:999px;
+
+          background:
+              linear-gradient(
+                  to bottom,
+                  rgba(255,255,255,.45),
+                  transparent
+              );
+
+          pointer-events:none;
+      }
+
+
+      /* Hover */
+
+      .project-tab:hover{
+      
+          transform:translateY(-2px);
+
+          color:#4338ca;
+
+          box-shadow:
+              0 12px 24px rgba(99,102,241,.15);
+      }
+
+
+      /* Icon */
+
+      .project-tab i{
+      
+          width:20px;
+
+          height:20px;
+
+          display:flex;
+
+          align-items:center;
+
+          justify-content:center;
+
+          border-radius:50%;
+
+          background:
+              linear-gradient(
+                  135deg,
+                  #eef2ff,
+                  #ffffff
+              );
+
+          color:#5b5cf0;
+
+          font-size:9px;
+
+          box-shadow:
+              inset 0 1px 0 rgba(255,255,255,.8);
+      }
+
+
+      /* Active */
+
+      .project-tab.active{
+      
+          color:#fff;
+
+          background:
+              linear-gradient(
+                  135deg,
+                  #4f46e5,
+                  #7c3aed
+              );
+
+          border-color:transparent;
+
+          box-shadow:
+              0 12px 28px rgba(99,102,241,.30);
+      }
+
+      .project-tab.active i{
+      
+          background:rgba(255,255,255,.18);
+
+          color:#fff;
+      }
+
+
+      /* Active Shine */
+
+      .project-tab.active::before{
+      
+          background:
+              linear-gradient(
+                  to bottom,
+                  rgba(255,255,255,.28),
+                  transparent
+              );
+      }
+
+      .project-viewport{
+      
+          position:relative;
+
+          overflow:hidden;
+
+          height:340px; /* Adjust to your page layout */
+      }
+
+      .projects-track{
+      
+          display:flex;
+
+          flex-direction:column;
+
+          width:100%;
+
+          height:300%;
+
+          transition:transform .65s cubic-bezier(.22,1,.36,1);
+      }
+
+      .project-slide{
+      
+          width:100%;
+
+          height:33.3333%;
+
+          flex-shrink:0;
+
+          padding-right:6px;
+
+          overflow-y:auto;
+
+          scrollbar-width:none;
+      }
+
+      .project-slide::-webkit-scrollbar{
+      
+          display:none;
+      }
+.p {
+    color: black !important;
+}
+  </style>
+</head>
+
+<body class="h-full bg-luxury-darkBg text-slate-100 font-sans transition-colors duration-500 overflow-x-hidden md:overflow-hidden relative paper-noise">
+
+  <!-- PRINT RESUME LAYOUT -->
+  <div id="printable-resume" class="hidden print:block max-w-4xl mx-auto p-8 bg-white text-slate-900 font-sans shadow-2xl rounded-lg">
+    <div class="flex justify-between items-start border-b-2 border-slate-300 pb-6 mb-6">
+      <div>
+        <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">Shobo Mozumder</h1>
+        <p class="text-xl text-indigo-700 font-semibold mt-1">Software Engineer (.NET / Core / Cloud)</p>
+        <p class="text-xs text-slate-600 mt-2 max-w-xl">
+          Passionate and results-driven software developer specializing in web application development using ASP.NET Core, database optimizations, and implementing scalable architectures.
+        </p>
+      </div>
+      <div class="text-right text-xs text-slate-600 space-y-1">
+        <p><i class="fa fa-phone text-indigo-600 mr-2"></i>+8801640703380, 01532441002</p>
+        <p><i class="fa fa-envelope text-indigo-600 mr-2"></i>shuvomozumder101@gmail.com</p>
+        <p><i class="fa fa-map-marker-alt text-indigo-600 mr-2"></i>Khilkhet, Dhaka, Bangladesh</p>
+        <p><i class="fab fa-github text-indigo-600 mr-2"></i>github.com/shuvomozumder101</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-8">
+      <div class="col-span-1 border-r border-slate-200 pr-6 space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wider border-b pb-2 mb-3">Skills</h2>
+          <p class="text-xs text-slate-600 font-semibold">C#, React, ASP.NET Core, Entity Framework, SQL Server, Docker, AWS EC2/S3</p>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wider border-b pb-2 mb-3">Education</h2>
+          <h3 class="font-bold text-slate-800 text-sm">B.Sc. Software Engineering</h3>
+          <p class="text-xs text-indigo-700">Daffodil International University (2021)</p>
+        </div>
+      </div>
+      <div class="col-span-2 space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wider border-b pb-2 mb-3">Work Experience</h2>
+          <h3 class="font-bold text-slate-800">Software Developer (.NET) • Singularity Ltd.</h3>
+          <p class="text-xs text-slate-500 font-medium">Dec 2021 - Running</p>
+          <ul class="list-disc pl-5 text-xs text-slate-600 mt-2 space-y-1">
+            <li>Refactored critical SQL queries and back-end integration matrices.</li>
+            <li>Collaborated with teams on high-impact analytical R&D dashboards.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ambient Space Overlays -->
+  <div class="absolute inset-0 z-0 bg-gradient-to-tr from-slate-950 via-[#0a0c10] to-slate-950 pointer-events-none overflow-hidden">
+    <div class="absolute top-10 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[110px] animate-pulse"></div>
+    <div class="absolute bottom-10 right-1/4 w-[500px] h-[500px] bg-amber-500/3 rounded-full blur-[140px] animate-bounce duration-[12000ms]"></div>
+    
+    <!-- Floating Spark Ambient Nodes -->
+    <div class="ambient-particle w-1.5 h-1.5 top-1/4 left-1/3" style="animation-delay: 0s;"></div>
+    <div class="ambient-particle w-2 h-2 top-2/3 left-1/4" style="animation-delay: 2s;"></div>
+    <div class="ambient-particle w-1 h-1 top-1/3 left-2/3" style="animation-delay: 4s;"></div>
+    <div class="ambient-particle w-2.5 h-2.5 top-3/4 left-3/4" style="animation-delay: 1s;"></div>
+  </div>
+
+  <main class="relative z-10 w-full min-h-screen flex flex-col justify-between p-4 md:p-6">
+    
+    <!-- TOP NAVBAR -->
+    <header class="no-print w-full max-w-7xl mx-auto flex justify-between items-center mb-4">
+      <div class="flex items-center space-x-3">
+        <span class="text-luxury-gold text-2xl font-cinzel font-bold tracking-wider">SM</span>
+        <div class="h-5 w-[1px] bg-slate-800"></div>
+        <p class="text-[10px] tracking-widest text-slate-400 uppercase hidden sm:block font-cinzel">Software Engineer Portfolio Chronicle</p>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <button id="themeToggle" class="bg-slate-900/90 hover:bg-slate-800 text-luxury-gold border border-slate-800/80 px-3.5 py-1.5 rounded-full text-[10px] uppercase tracking-wider flex items-center space-x-1.5 transition-all">
+          <i class="fa fa-book-open"></i>
+          <span id="themeName" class="font-semibold">Midnight Library</span>
+        </button>
+
+        <a href="Shobo_Mozumder_CV.pdf" download="Shobo_Mozumder_CV.pdf" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-1.5 rounded-full text-[10px] uppercase tracking-wider flex items-center space-x-2 transition-all shadow-lg hover:shadow-indigo-500/20">
+          <i class="fa fa-file-pdf"></i>
+          <span>Download CV</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- MAIN 3D VIEWPORT -->
+    <div class="w-full flex-grow flex items-center justify-center py-4 relative">
+      
+      <!-- Tactile Turn triggers -->
+      <button id="prevBtn" class="no-print hidden md:flex absolute left-4 z-50 bg-slate-950/80 text-luxury-gold hover:text-white border border-slate-800 w-12 h-12 rounded-full items-center justify-center hover:bg-indigo-900/30 hover:border-luxury-gold/50 transition-all duration-300 transform -translate-y-1/2 top-1/2 shadow-2xl">
+        <i class="fa fa-chevron-left text-lg"></i>
+      </button>
+
+      <button id="nextBtn" class="no-print hidden md:flex absolute right-4 z-50 bg-slate-950/80 text-luxury-gold hover:text-white border border-slate-800 w-12 h-12 rounded-full items-center justify-center hover:bg-indigo-900/30 hover:border-luxury-gold/50 transition-all duration-300 transform -translate-y-1/2 top-1/2 shadow-2xl">
+        <i class="fa fa-chevron-right text-lg"></i>
+      </button>
+
+      <!-- VIEWPORT STABILITY CONTAINER -->
+      <div class="perspective-container flex items-center justify-center">
+        
+        <!-- PHYSICAL 3D BOOK -->
+        <div id="book" class="book">
+          
+          <div class="book-spine"></div>
+
+          <!-- ==================== SHEET 1 (COVER & BACK COVER 1) ==================== -->
+          <div class="sheet" style="z-index: 50;">
+            <!-- FRONT COVER (Elegant golden typography) -->
+            <div id="coverFront" class="page-face front overflow-hidden shadow-2xl border-y border-r border-amber-600/20">
+              <div class="absolute inset-0 bg-luxury-navyCover leather-texture transition-colors duration-500"></div>
+              
+              <!-- Frame borders -->
+              <div class="absolute inset-4 border-[2px] border-double border-luxury-gold/40 rounded-lg pointer-events-none z-10"></div>
+              <div class="absolute inset-6 border border-luxury-gold/20 rounded-md pointer-events-none z-10"></div>
+              
+              <div class="relative z-20 h-full flex flex-col justify-between p-8 text-center text-luxury-gold select-none">
+                <div class="mt-8">
+                  <span class="text-[9px] uppercase tracking-[0.3em] font-semibold opacity-85">Professional Document</span>
+                  <div class="h-[1px] w-16 bg-luxury-gold/30 mx-auto mt-2"></div>
+                </div>
+
+                <div class="space-y-4">
+                  <div class="w-16 h-16 mx-auto rounded-full border border-luxury-gold/40 flex items-center justify-center bg-slate-950/60 relative">
+                    <div class="absolute inset-1 border border-dashed border-luxury-gold/25 rounded-full animate-spin duration-[40s]"></div>
+                    <i class="fa fa-shield-halved text-xl text-luxury-gold"></i>
+                  </div>
+                  
+                  <h1 class="font-cinzel text-3xl md:text-4xl font-bold tracking-widest leading-snug drop-shadow-xl">SHOBO<br>MOZUMDER</h1>
+                  <p class="text-xs tracking-[0.25em] uppercase text-white/95">Software Engineer</p>
+                  
+                  <div class="flex items-center justify-center space-x-2">
+                    <span class="h-[1px] w-6 bg-luxury-gold/40"></span>
+                    <span class="text-[9px] tracking-widest uppercase text-luxury-gold">Web Application Developer C#/.Net Core</span>
+                    <span class="h-[1px] w-6 bg-luxury-gold/40"></span>
+                  </div>
+                </div>
+
+                <div class="mb-6 space-y-2">
+                  <p class="text-[9px] tracking-widest uppercase opacity-75">Interactive Volume</p>
+                  <p class="text-[10px] text-white/50 italic font-serif">Swipe or turn page to enter</p>
+                </div>
+              </div>
+              <div class="absolute left-0 top-0 bottom-0 w-5 bg-gradient-to-r from-black/60 to-transparent"></div>
+              <div class="light-glare"></div>
+            </div>
+
+            <!-- BACK COVER 1: COMPREHENSIVE DIRECTORY -->
+            <div class="page-face back overflow-hidden shadow-2xl">
+              <div class="absolute inset-0 bg-slate-950 leather-texture opacity-95"></div>
+              <div class="absolute inset-4 border border-slate-800/80 rounded-md"></div>
+              
+              <div class="relative z-20 h-full flex flex-col justify-between p-8 text-slate-300 font-serif">
+                <div class="text-center mt-6">
+                  <h2 class="text-lg text-luxury-gold tracking-widest font-cinzel font-semibold">VOLUME DIRECTORY</h2>
+                  <p class="text-[9px] tracking-widest text-slate-500 uppercase mt-0.5">Selected Indexes</p>
+                </div>
+
+                <nav class="space-y-3 max-w-xs mx-auto text-xs my-auto w-full font-sans">
+                  <button onclick="bookNavigate(1)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                    <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">01 • Profile & Bio</span>
+                    <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
+                    <span class="font-serif italic text-slate-400">Page 1</span>
+                  </button>
+                  <button onclick="bookNavigate(1)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                    <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">02 • Tech Stack Matrix</span>
+                    <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
+                    <span class="font-serif italic text-slate-400">Page 2</span>
+                  </button>
+                  <button onclick="bookNavigate(2)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                    <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">03 • Employment History</span>
+                    <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
+                    <span class="font-serif italic text-slate-400">Page 3</span>
+                  </button>
+                  <button onclick="bookNavigate(2)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                    <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">04 • Production Systems</span>
+                    <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
+                    <span class="font-serif italic text-slate-400">Page 4</span>
+                  </button>
+                  <button onclick="bookNavigate(3)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                    <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">05 • Applications Utility</span>
+                    <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
+                    <span class="font-serif italic text-slate-400">Page 5</span>
+                  </button>
+                  <button onclick="bookNavigate(3)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                    <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">06 • Academic & Reference</span>
+                    <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
+                    <span class="font-serif italic text-slate-400">Page 6</span>
+                  </button>
+                </nav>
+
+                <div class="text-center text-[9px] text-slate-600 tracking-wider font-sans uppercase">
+                  Web Application 
+                </div>
+              </div>
+              <div class="absolute right-0 top-0 bottom-0 w-6 crease-shadow-left"></div>
+              <div class="light-glare"></div>
+            </div>
+          </div>
+
+          <!-- ==================== SHEET 2 (PAGE 1 & PAGE 2) ==================== -->
+          <div class="sheet" style="z-index: 40;">
+            <!-- PAGE 1: DETAILED EXECUTIVE BIOGRAPHY -->
+            <div class="page-face front bg-luxury-paperLight text-slate-800 paper-noise page-depth-right">
+              <div class="absolute inset-0 p-8 flex flex-col justify-between">
+                
+                <div class="space-y-4 overflow-y-auto no-scrollbar pr-1 flex-grow">
+                  <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
+                    <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Introduction</span>
+                    <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter I</span>
+                  </div>
+
+                  <!-- Profile Presentation Row -->
+                  <div class="flex items-start space-x-4 pt-2">
+                    <div class="flex-shrink-0">
+                      <div class="w-24 h-24 bg-slate-900 rounded-lg overflow-hidden border border-amber-900/20 shadow-md relative flex items-center justify-center">
+                        <img src="SMS2.jpg" alt="Shobo Mozumder" class="w-full h-full object-cover" onerror="this.remove(); document.getElementById('avatar-fallback').classList.remove('hidden')">
+                        <div id="avatar-fallback" class="hidden text-center">
+                          <i class="fa fa-user-tie text-2xl text-luxury-gold"></i>
+                          <p class="text-[8px] text-slate-400 uppercase tracking-widest mt-1">DIU '21</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="space-y-0.5">
+                      <h2 class="font-serif text-xl font-bold tracking-tight text-slate-900 leading-none">Shobo Mozumder</h2>
+                      <p class="text-[10px] font-bold uppercase text-indigo-700 tracking-wider">Software Engineer (.NET)</p>
+                      
+                      <div class="text-[9px] text-slate-600 space-y-0.5 pt-1">
+                        <p><i class="fa fa-envelope text-amber-900/50 mr-1.5 w-3"></i>shuvomozumder101@gmail.com</p>
+                        <p><i class="fa fa-phone text-amber-900/50 mr-1.5 w-3"></i>+8801640703380, 01532441002</p>
+                        <p><i class="fa fa-map-pin text-amber-900/50 mr-1.5 w-3"></i>Khilkhet, Dhaka, Bangladesh</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Biography Copy -->
+                  <div class="space-y-3 text-[11px] leading-relaxed text-slate-700 font-serif pt-1">
+                    <p class="first-letter:text-3xl first-letter:font-cinzel first-letter:font-bold first-letter:float-left first-letter:mr-2 first-letter:text-indigo-800 text-justify">
+                      I am a passionate and results-driven software developer specializing in web application development using ASP.NET Core and modern technologies. Skilled in designing scalable architectures, developing RESTful APIs, and implementing cloud-based solutions. I actively stay current with emerging software trends and best practices to enhance my technical expertise. Focused on building efficient, secure, and maintainable web systems, with a strong ambition to grow into a Software Architect role specializing in microservices and distributed systems, contributing to innovative and high-impact projects
+                     </p>                    
+                    <div class="bg-indigo-950/5 p-2.5 rounded border border-slate-200/60 font-sans text-[10px] text-slate-800 text-justify">
+                      <strong>Career Ambition:</strong> To grow into a Software Architect specializing in highly resilient microservices and high-throughput distributed systems.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-center text-[9px] text-slate-400 border-t border-slate-200/60 pt-2">
+                  <span>SHOBO MOZUMDER</span>
+                  <span class="font-serif">Page 1</span>
+                </div>
+              </div>
+              <div class="absolute left-0 top-0 bottom-0 w-6 crease-shadow-right"></div>
+              <div class="light-glare"></div>
+            </div>
+
+            <!-- PAGE 2: TECH STACK MATRIX (ANIMATED BARS) -->
+            <div class="page-face back bg-luxury-paperLight text-slate-800 paper-noise page-depth-left">
+              <div class="absolute inset-0 p-8 flex flex-col justify-between">
+                
+                <div class="space-y-4 overflow-y-auto no-scrollbar pr-1 flex-grow">
+                  <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
+                    <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter II</span>
+                    <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Capabilities</span>
+                  </div>
+
+                  <h2 class="font-serif text-lg font-bold text-slate-900">Technical Skillset Matrix</h2>
+
+                  <div class="grid grid-cols-2 gap-5 text-[10px]">
+
+                    <!-- Core Programming -->
+                    <div class="glass-panel">
+                        <h3 class="glass-title">
+                            <div class="glass-title-icon">
+                                <i class="fa fa-code"></i>
+                            </div>
+                            Core Programming
+                        </h3>
+
+                        <div class="space-y-4">                        
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="skill-name">C# (.NET Core)</span>
+                                    <span class="skill-percent">90%</span>
+                                </div>
+                                <div class="skill-track">
+                                    <div class="skill-fill skill-bar-fill"
+                                         data-target-width="90%"
+                                         style="width:0%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="skill-name">SQL Server / T-SQL</span>
+                                    <span class="skill-percent">85%</span>
+                                </div>
+                                <div class="skill-track">
+                                    <div class="skill-fill skill-bar-fill"
+                                         data-target-width="85%"
+                                         style="width:0%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="skill-name">React / JavaScript</span>
+                                    <span class="skill-percent">75%</span>
+                                </div>
+                                <div class="skill-track">
+                                    <div class="skill-fill skill-bar-fill"
+                                         data-target-width="75%"
+                                         style="width:0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Frameworks -->
+                    <div class="glass-panel">
+                    
+                        <h3 class="glass-title">
+                            <div class="glass-title-icon">
+                                <i class="fa fa-layer-group"></i>
+                            </div>
+                            Frameworks & ORMs
+                        </h3>
+
+                        <div class="space-y-4">                        
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="skill-name">ASP.NET Core MVC</span>
+                                    <span class="skill-percent">92%</span>
+                                </div>
+                                <div class="skill-track">
+                                    <div class="skill-fill skill-bar-fill"
+                                         data-target-width="92%"
+                                         style="width:0%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="skill-name">EF Core / ORM</span>
+                                    <span class="skill-percent">88%</span>
+                                </div>
+                                <div class="skill-track">
+                                    <div class="skill-fill skill-bar-fill"
+                                         data-target-width="88%"
+                                         style="width:0%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="skill-name">Docker & Containers</span>
+                                    <span class="skill-percent">80%</span>
+                                </div>
+                                <div class="skill-track">
+                                    <div class="skill-fill skill-bar-fill"
+                                         data-target-width="80%"
+                                         style="width:0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+
+                  <!-- Practices List -->
+                  <div class="space-y-3 pt-1">
+                    <h2 h2 class="font-serif text-lg font-bold text-slate-900">Enterprise Tools & Concepts</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div class="glass-card"><div class="glass-icon"><i class="fab fa-aws"></i></div><span>AWS (EC2, S3), Docker</span></div>
+                      <div class="glass-card"><div class="glass-icon"><i class="fab fa-git-alt"></i></div><span>Git (GitLab, GitHub), CI/CD</span></div>
+                      <div class="glass-card"><div class="glass-icon"><i class="fab fa-trello"></i></div><span>Trello, Scrum</span></div>
+                      <div class="glass-card"><div class="glass-icon"><i class="fas fa-database"></i></div><span>Stored Procedures & Views</span></div>
+                      <div class="glass-card"><div class="glass-icon"><i class="fas fa-puzzle-piece"></i></div><span>Design Patterns</span></div>
+                      <div class="glass-card"><div class="glass-icon"><i class="fas fa-file-pdf"></i></div><span>RDLC Reports, QuestPDF</span></div>
+                      <div class="glass-card col-span-2"><div class="glass-icon"><i class="fas fa-code"></i></div><span>HTML, CSS, Bootstrap, jQuery, Ajax</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-center text-[9px] text-slate-400 border-t border-slate-200/60 pt-2">
+                  <span class="font-serif">Page 2</span>
+                  <span>Capabilities Inventory</span>
+                </div>
+              </div>
+              <div class="absolute right-0 top-0 bottom-0 w-6 crease-shadow-left"></div>
+              <div class="light-glare"></div>
+            </div>
+          </div>
+
+          <!-- ==================== SHEET 3 (PAGE 3 & PAGE 4) ==================== -->
+          <div class="sheet" style="z-index: 30;">
+            <!-- PAGE 3: DETAILED CHRONOLOGICAL TIMELINE -->
+            <div class="page-face front bg-luxury-paperLight text-slate-800 paper-noise page-depth-right">
+              <div class="absolute inset-0 p-8 flex flex-col justify-between">
+                
+                <div class="space-y-4 overflow-y-auto no-scrollbar pr-1 flex-grow">
+                  <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
+                    <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Timeline</span>
+                    <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter III</span>
+                  </div>
+
+                  <h2 class="font-serif text-lg font-bold text-slate-900">Work Experience</h2>
+
+                  <!-- Chronology Map -->
+                  <div class="space-y-4 relative pl-3.5 border-l border-slate-300">
+                    
+                    <!-- Singularity Software Developer -->
+                    <div class="relative">
+                      <div class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-indigo-900 border-2 border-luxury-paperLight"></div>
+                      <div class="flex justify-between items-baseline mb-0.5">
+                        <h3 class="text-[12px] font-bold text-slate-900 uppercase">Software Developer (.NET)</h3>
+                        <span class="text-[10px] font-semibold text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded">Dec 2024 - Present</span>
+                      </div>
+                      <p class="text-[10px] font-bold text-amber-950">Singularity Ltd. <span class="text-slate-500 text-[10px] font-medium text-indigo-950">(Tejgaon I/A, Dhaka)</span></p>
+                      
+                      <ul class="list-disc pl-3 text-[10px] text-slate-600 space-y-1 mt-1 font-serif text-justify">
+                        <li>Led full-stack application development using ASP.NET Core and React, focusing on scalability, performance, and maintainability</li>
+                        <li>Designed complex real-time tracking dashboards and reporting tools.</li>
+                        <li>Developed dynamic PDF generation solutions using QuestPDF's fluent C# API for complex business documents and reports.</li>
+                        <li>Coordinated closely on client delivery matrices for BAT Bangladesh QAD system and DCCI (Dhaka Chamber Of Commerce) ERP System</li>
+                      </ul>
+                    </div>
+
+                    <div class="relative">
+                      <div class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-indigo-500 border-2 border-luxury-paperLight"></div>
+                      <div class="flex justify-between items-baseline mb-0.5">
+                        <h3 class="text-[12px] font-bold text-slate-900 uppercase">Jr. Software Developer (.NET)</h3>
+                        <span class="text-[10px] font-semibold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">Dec 2021 - Dec 2024</span>
+                      </div>
+                      <p class="text-[10px] font-bold text-amber-950">Singularity Ltd. <span class="text-slate-500 text-[10px] font-medium text-indigo-950">(Tejgaon I/A, Dhaka)</span></p>
+                      
+                      <ul class="list-disc pl-3 text-[10px] text-slate-600 space-y-1 mt-1 font-serif text-justify">
+                        <li>Lead research and development using ASP.NET Core framework.</li>
+                        <li>Refactored legacy database components, optimizing complex stored procedures in SQL Server/Oracle.</li>
+                        <li>Designed complex real-time tracking dashboards and reporting tools.</li>
+                        <li>Coordinated closely on client delivery matrices for BAT Bangladesh QAD system.</li>
+                      </ul>
+                    </div>
+
+                    <!-- Singularity Intern -->
+                    <div class="relative">
+                      <div class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-slate-400 border-2 border-luxury-paperLight"></div>
+                      <div class="flex justify-between items-baseline mb-0.5">
+                        <h3 class="text-[12px] font-bold text-slate-900 uppercase">Intern Software Developer (.NET)</h3>
+                        <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">Sep 2021 - Dec 2021</span>
+                      </div>
+                      <p class="text-[10px] font-bold text-amber-950">Singularity Ltd. <span class="text-slate-500 text-[10px] font-medium text-indigo-950">(Baridhara DOHS, Dhaka)</span></p>
+                      
+                      <ul class="list-disc pl-3 text-[10px] text-slate-600 space-y-1 mt-1 font-serif text-justify">
+                        <li>Constructed robust automated printing components and visual charts using RDLC.</li>
+                        <li>Developed clean Microsoft Excel content generators and interactive table layouts.</li>
+                      </ul>
+                    </div>
+
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-center text-[9px] text-slate-400 border-t border-slate-200/60 pt-2">
+                  <span>Singularity Ltd. Tenure</span>
+                  <span class="font-serif">Page 3</span>
+                </div>
+              </div>
+              <div class="absolute left-0 top-0 bottom-0 w-6 crease-shadow-right"></div>
+              <div class="light-glare"></div>
+            </div>
+
+            <!-- PAGE 4: ENTERPRISE PROJECTS (SMOOTH HORIZONTAL SLIDEOUT TRACK) -->
+            <div class="page-face back bg-luxury-paperLight text-slate-800 paper-noise page-depth-left">
+              <div class="absolute inset-0 p-8 flex flex-col justify-between">
+                
+                <div class="flex flex-col flex-grow overflow-hidden">
+                  <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
+                    <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter IV</span>
+                    <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Deployments</span>
+                  </div>
+
+                  <h2 class="font-serif text-lg font-bold text-slate-900 mt-2">Enterprise Systems</h2>
+                  
+                  <!-- Project Navigation -->
+                  <div class="project-nav">                  
+                      <!-- DCCI -->
+                      <button
+                          id="btn-dcci"
+                          onclick="showProject('dcci')"
+                          class="project-tab active">
+                          <i class="fa fa-building"></i>
+                          <span>DCCI ERP</span>
+                      </button>
+
+                      <!-- AURA -->
+                      <button
+                          id="btn-aura"
+                          onclick="showProject('aura')"
+                          class="project-tab">
+                          <i class="fa fa-industry"></i>
+                          <span>AURA QAD</span>
+                      </button>
+
+                      <!-- HBL -->
+                      <button
+                          id="btn-hbl"
+                          onclick="showProject('hbl')"
+                          class="project-tab">
+                          <i class="fa fa-envelope"></i>
+                          <span>HBL Email & SMS</span>
+                      </button>
+                  </div>
+
+                  <!-- SMOOTH SCROLLING VIEWPORT -->
+                  <div class="w-full flex-grow overflow-hidden relative">
+                    <div id="projects-track" class="h-[300%] flex flex-col transition-transform duration-700 ease-in-out select-text">
+                      
+                      <!-- Slide 1: DCCI -->
+                      <div id="project-dcci"class="h-1/3 w-full shrink-0 pr-2 overflow-y-auto no-scrollbar flex flex-col justify-start">
+                        <div class="enterprise-card">         
+                          <div class="flex justify-between items-center">
+                              <h4 class="project-title"><i class="fa fa-building"></i>DCCI ERP <small>(Dhaka Chamber of Commerce & Industry)</small></h4>
+                              <span class="version-badge">V-01</span>
+                          </div>
+                          <hr>
+                            <h5 class="section-heading">Project Overview</h5>
+                          <p class="text-justify">
+                              A comprehensive Enterprise Resource Planning (ERP) solution developed for the Dhaka Chamber of Commerce & Industry (DCCI) to digitize and streamline organizational operations. The platform centralizes member registration and profile management, membership renewal, billing and payment tracking, event and training management, document generation, correspondence, and financial reporting.
+                          </p>
+                          <h5 class="section-heading">Responsibilities</h5>
+
+                          <p class="text-justify">
+                              • Led research, analysis and system design.<br>
+
+                              • Developed ASP.NET Core modules for Member
+                              Management, Membership Renewal and Billing.<br>
+
+                              • Designed RESTful APIs for frontend integration.<br>
+
+                              • Optimized SQL Server database performance using indexing,
+                              views and stored procedures.<br>
+
+                              • Integrated QuestPDF to generate Membership Certificates,
+                              Invoices and Reports.<br>
+
+                              • Worked closely with business stakeholders to implement
+                              enterprise requirements.
+                          </p>
+
+                          <h5 class="section-heading">Technologies</h5>
+                          <div class="flex flex-wrap gap-2 mt-2">
+                             <span class="tech-chip">ASP.NET Core</span>
+                             <span class="tech-chip">React</span>
+                             <span class="tech-chip">MSSQL</span>
+                             <span class="tech-chip">QuestPDF</span>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      <!-- Slide 2: AURA QAD -->
+                      <div id="project-aura"class="h-1/3 w-full shrink-0 pr-2 overflow-y-auto no-scrollbar flex flex-col justify-start">
+                      
+                          <div class="enterprise-card">      
+                              <div class="flex justify-between items-center">                              
+                                  <h4 class="project-title"><i class="fa fa-industry"></i>AURA QAD<small>(British American Tobacco Bangladesh)</small></h4>                      
+                                  <span class="version-badge">V01 to V03</span>                      
+                              </div>                      
+                              <hr>
+                              <h5 class="section-heading">Project Overview</h5>
+                      
+                              <p class="text-justify">
+                                  AURA is an enterprise manufacturing intelligence platform
+                                  developed for British American Tobacco Bangladesh (BATB).
+                                  Integrated with the QAD ERP system, it provides real-time
+                                  production monitoring, KPI dashboards, quality control,
+                                  manufacturing analytics, automated reporting and operational
+                                  insights to improve production efficiency and business
+                                  decision-making.
+                              </p>
+                              <h5 class="section-heading">Responsibilities</h5>
+                      
+                              <p class="text-justify">
+                                  • Led research, architecture and development of enterprise modules.<br>                      
+                                  • Developed ASP.NET Core MVC applications supporting BAT R&D initiatives.<br>                      
+                                  • Built real-time dashboards and reporting modules.<br>                      
+                                  • Optimized SQL Server and Oracle database performance.<br>                      
+                                  • Integrated manufacturing data from the QAD ERP System.<br>                      
+                                  • Collaborated with business stakeholders to deliver enterprise solutions.
+                              </p>
+
+                              <h5 class="section-heading">Technologies</h5>                      
+                              <div class="flex flex-wrap gap-2 mt-2">                              
+                                  <span class="tech-chip">C#</span>                      
+                                  <span class="tech-chip">ASP.NET Core MVC</span>                      
+                                  <span class="tech-chip">SQL Server</span>                      
+                                  <span class="tech-chip">Oracle</span>                      
+                                  <span class="tech-chip">JavaScript</span>                      
+                                  <span class="tech-chip">jQuery</span>                      
+                                  <span class="tech-chip">AJAX</span>                      
+                                  <span class="tech-chip">Chart.js</span>                      
+                                  <span class="tech-chip">QAD ERP</span>                      
+                              </div>                      
+                          </div>                      
+                      </div>
+
+                      <!-- Slide 3: HBL Email & SMS -->
+                      <div id="project-hbl"class="h-1/3 w-full shrink-0 pr-2 overflow-y-auto no-scrollbar flex flex-col justify-start">
+                          <div class="enterprise-card">        
+                              <div class="flex justify-between items-center">                              
+                                  <h4 class="project-title"><i class="fa fa-envelope"></i>HBL Email & SMS System<small>(Heidelberg Bangladesh Limited)</small>
+                                  </h4>
+                                  <span class="version-badge">V02</span>
+                              </div>
+                              <hr>
+                              <h5 class="section-heading">Project Overview</h5>
+
+                              <p class="text-justify">
+                                  A modern enterprise messaging platform developed for Heidelberg
+                                  Bangladesh Limited (HBL) to automate email-to-SMS communication.
+                                  The system captures incoming emails, extracts recipient mobile
+                                  numbers, converts email content into SMS messages, and securely
+                                  delivers them through an integrated SMS Gateway, ensuring fast
+                                  and reliable business communication.
+                              </p>
+
+                              <h5 class="section-heading">Responsibilities</h5>
+
+                              <p class="text-justify">
+                                  • Developed and maintained scalable ASP.NET Core applications.<br>
+                                  • Implemented new business features and workflow enhancements.<br>
+                                  • Optimized SQL Server queries, stored procedures and database performance.<br>
+                                  • Integrated third-party REST APIs and SMS Gateway services.<br>
+                                  • Improved application performance, security and reliability.<br>
+                                  • Worked closely with business stakeholders throughout development and deployment.
+                              </p>
+                              <h5 class="section-heading">Technologies</h5>
+                              <div class="flex flex-wrap gap-2 mt-2">            
+                                  <span class="tech-chip">C#</span>
+                                  <span class="tech-chip">ASP.NET Core MVC</span>
+                                  <span class="tech-chip">SQL Server</span>
+                                  <span class="tech-chip">REST API</span>
+                                  <span class="tech-chip">SMS Gateway</span>
+                                  <span class="tech-chip">Entity Framework Core</span>
+                                  <span class="tech-chip">HTML & CSS</span>
+                                  <span class="tech-chip">JavaScript</span>
+                                  <span class="tech-chip">jQuery</span>
+                              </div>
+                          </div>
+                      </div>    
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-center text-[9px] text-slate-400 border-t border-slate-200/60 pt-2">
+                  <span class="font-serif">Page 4</span>
+                  <span>Enterprise Deployment</span>
+                </div>
+              </div>
+              <div class="absolute right-0 top-0 bottom-0 w-6 crease-shadow-left"></div>
+              <div class="light-glare"></div>
+            </div>
+          </div>
+
+          <!-- ==================== SHEET 4 (PAGE 5 & PAGE 6) ==================== -->
+          <div class="sheet" style="z-index: 20;">
+            <!-- PAGE 5: WEB APPLICATIONS UTILITY PORTFOLIO -->
+            <div class="page-face front bg-luxury-paperLight text-slate-800 paper-noise page-depth-right">
+              <div class="absolute inset-0 p-8 flex flex-col justify-between">
+                
+                <div class="space-y-4 overflow-y-auto no-scrollbar pr-1 flex-grow">
+                  <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
+                    <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Utilities</span>
+                    <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter V</span>
+                  </div>
+
+                  <h2 class="font-serif text-lg font-bold text-slate-900">Custom Applications</h2>
+
+                  <div class="space-y-3">                  
+                    <!-- Job Portal -->
+                    <div class="enterprise-card">
+                        <div class="flex justify-between items-center">
+                            <h4 class="project-title"><i class="fa fa-briefcase"></i>Online Job Portal<small>Recruitment Platform</small></h4>
+                            <span class="version-badge">WEB APP</span>
+                        </div>
+                        <hr>
+                        <h5 class="section-heading">Project Overview</h5>
+                        <p class="text-justify">
+                            A modern recruitment platform connecting employers with job
+                            seekers. Candidates can build professional profiles, search
+                            vacancies and submit applications, while organizations manage
+                            company profiles, publish job openings and review applicants
+                            through an administrative dashboard.
+                        </p>
+                        <h5 class="section-heading">Responsibilities</h5>
+                        <p class="text-justify">
+                            • Designed authentication and role-based authorization.<br>
+                            • Developed candidate profile management and resume modules.<br>
+                            • Built job posting, searching and application workflows.<br>
+                            • Created RESTful APIs and responsive UI components.<br>
+                            • Optimized SQL Server queries and database performance.
+                        </p>
+                        <h5 class="section-heading">Technologies</h5>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <span class="tech-chip">ASP.NET Core MVC</span>
+                            <span class="tech-chip">C#</span>
+                            <span class="tech-chip">SQL Server</span>
+                            <span class="tech-chip">REST API</span>
+                            <span class="tech-chip">JavaScript</span>
+                            <span class="tech-chip">jQuery</span>
+                            <span class="tech-chip">Bootstrap</span>
+                        </div>
+                    </div>
+                  
+                    <!-- Digital Wallet -->
+                    <div class="enterprise-card">       
+                        <div class="flex justify-between items-center">                        
+                            <h4 class="project-title"><i class="fa fa-wallet"></i>Online Digital Wallet<small>Professional Networking Platform</small></h4>
+                            <span class="version-badge">WEB APP</span>
+                        </div>
+                        <hr>
+                        <h5 class="section-heading">Project Overview</h5>
+                        <p class="text-justify">
+                            A web-based digital networking platform that enables users to
+                            create professional profiles, connect with other users,
+                            exchange real-time messages, publish social posts and generate
+                            personalized digital visiting cards. The application delivers a
+                            modern social experience for professional networking.
+                        </p>
+                        <h5 class="section-heading">Responsibilities</h5>
+                        <p class="text-justify">
+                            • Developed secure authentication and profile management modules.<br>
+                            • Implemented contact management and networking features.<br>
+                            • Built real-time messaging using SignalR.<br>
+                            • Developed social feeds and digital visiting card generation.<br>
+                            • Designed responsive interfaces and optimized SQL Server performance.
+                        </p>
+                        <h5 class="section-heading">Technologies</h5>
+
+                        <div class="flex flex-wrap gap-2 mt-2">                        
+                            <span class="tech-chip">ASP.NET Core MVC</span>
+                            <span class="tech-chip">C#</span>
+                            <span class="tech-chip">SignalR</span>
+                            <span class="tech-chip">SQL Server</span>
+                            <span class="tech-chip">JavaScript</span>
+                            <span class="tech-chip">jQuery</span>
+                            <span class="tech-chip">Bootstrap</span>
+                        </div>
+                    </div>
+                  
+                    <!-- Ticket Management -->
+                    <div class="enterprise-card">           
+                        <div class="flex justify-between items-center">                        
+                            <h4 class="project-title"><i class="fa fa-ticket-alt"></i>Ticket Management System<small>Reservation Platform</small></h4>
+                              <span class="version-badge">WEB APP</span>                    
+                        </div>                    
+                        <hr>
+                        <h5 class="section-heading">Project Overview</h5>                    
+                        <p class="text-justify">
+                            A web-based reservation platform designed to simplify ticket
+                            booking and schedule management. Users can browse available
+                            schedules, reserve seats, purchase tickets and manage bookings,
+                            while administrators oversee routes, schedules and customer
+                            reservations through a centralized dashboard.
+                        </p>                                                               
+                        <h5 class="section-heading">Responsibilities</h5>                    
+                        <p class="text-justify">
+                            • Developed user authentication and reservation workflows.<br>                    
+                            • Implemented ticket booking and seat allocation modules.<br>                    
+                            • Built administrative dashboards for schedule management.<br>                    
+                            • Optimized SQL Server queries and stored procedures.<br>                    
+                            • Enhanced application performance and overall user experience.
+                        </p>                    
+                        <h5 class="section-heading">Technologies</h5>                    
+                        <div class="flex flex-wrap gap-2 mt-2">                        
+                            <span class="tech-chip">ASP.NET Core MVC</span>                    
+                            <span class="tech-chip">C#</span>                    
+                            <span class="tech-chip">SQL Server</span>                         
+                            <span class="tech-chip">JavaScript</span>                    
+                            <span class="tech-chip">jQuery</span>                    
+                            <span class="tech-chip">Bootstrap</span>                    
+                        </div>                    
+                    </div>                 
+                  </div>                
+                </div>
+                <div class="flex justify-between items-center text-[9px] text-slate-400 border-t border-slate-200/60 pt-2">
+                  <span>Custom Applications Registry</span>
+                  <span class="font-serif">Page 5</span>
+                </div>
+              </div>
+              <div class="absolute left-0 top-0 bottom-0 w-6 crease-shadow-right"></div>
+              <div class="light-glare"></div>
+            </div>
+
+            <!-- PAGE 6: EDUCATION & PROFESSIONAL REFERENCE MATRIX -->
+            <div class="page-face back bg-luxury-paperLight text-slate-800 paper-noise page-depth-left"> 
+              <div class="absolute inset-0 p-8 flex flex-col justify-between"> 
+                <div class="space-y-3.5 overflow-y-auto no-scrollbar pr-1 flex-grow"> 
+                  <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5"> 
+                    <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter VI</span> 
+                    <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Endorsements</span> 
+                  </div>                   
+                  <h2 class="font-serif text-lg font-bold text-slate-900 mb-3">Academic Background</h2>
+
+                  <div class="space-y-3">                
+                      <div class="enterprise-card">                      
+                          <div class="flex justify-between items-center">                          
+                              <h4 class="project-title"><i class="fa fa-graduation-cap"></i>B.Sc. in Software Engineering</h4>
+                              <span class="version-badge">2022</span>
+                          </div>
+                          <hr>
+                          <p>
+                              <strong>Daffodil International University</strong><br>
+                              Department of Software Engineering
+                          </p>
+                      </div>
+
+                      <div class="enterprise-card">                      
+                          <div class="flex justify-between items-center">                          
+                              <h4 class="project-title"><i class="fa fa-school"></i>Higher Secondary Certificate</h4>
+                              <span class="version-badge">2015</span>
+                          </div>
+                          <hr>
+                          <p>
+                              <strong>Badsha Mia Ideal High School & College</strong><br>
+                              Science Group<br>
+                              GPA : 4.00 / 5.00
+                          </p>
+                      </div>
+                      <div class="enterprise-card">                      
+                          <div class="flex justify-between items-center">                          
+                              <h4 class="project-title"><i class="fa fa-book"></i>Secondary School Certificate</h4>
+                              <span class="version-badge">2013</span>
+                          </div>
+                          <hr>
+                          <p>
+                              <strong>Badsha Mia Ideal High School & College</strong><br>
+                              Science Group<br>
+                              GPA : 4.75 / 5.00
+                          </p>
+                      </div>
+                  </div>
+
+                                    
+                  <h2 class="font-serif text-[11px] font-bold text-slate-900 uppercase tracking-wider mt-4 mb-2">Professional References</h2>
+
+                  <div class="grid grid-cols-2 gap-3">     
+                      <div class="enterprise-card">                      
+                        <h4 class="project-title"><i class="fa fa-user-tie"></i>Mr. Ratish Chandra Sen</h4>
+                        <hr>
+                        <p>                          
+                           <strong>Senior Engineer</strong><br>
+                            Education Engineering Department
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mt-3">                          
+                          <span class="tech-chip">📞 +8801711831082</span>
+                          <span class="tech-chip">✉ ratishsen@yahoo.com</span>
+                        </div>
+                      </div>
+                      <div class="enterprise-card">                      
+                        <h4 class="project-title">
+                          <i class="fa fa-user-graduate"></i>Ms. Nusrat Jahan</h4>
+                          <hr>
+                        <p>                          
+                          <strong>Lecturer (Senior Scale)</strong><br>
+                          Department of Software Engineering<br>
+                          Daffodil International University
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mt-3">                          
+                          <span class="tech-chip">✉ nusrat.swe@diu.edu.bd</span>
+                        </div>
+                      </div>
+                      <div class="enterprise-card">                      
+                        <h4 class="project-title">
+                          <i class="fa fa-user-graduate"></i>Mr. Shafikul Islam</h4>
+                          <hr>
+                        <p>                          
+                          <strong>Team Leader</strong><br>
+                          Department of Web Application<br>
+                          Singularity Ltd.
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mt-3">
+                          <span class="tech-chip">📞 +8801829848975</span>                          
+                          <span class="tech-chip">✉ shafikul.singularity@gmail.com</span>
+                        </div>
+                      </div>
+                      <div class="enterprise-card">                      
+                        <h4 class="project-title">
+                          <i class="fa fa-user-graduate"></i>Mr. Mahamub Alam</h4>
+                          <hr>
+                        <p>                          
+                          <strong>Sr. Software Engineering</strong><br>
+                          Department of Web Application<br>
+                          Singularity Ltd.
+                        </p>
+
+                        <div class="flex flex-wrap gap-2 mt-3">
+                          <span class="tech-chip">📞 +8801712-969099</span>                          
+                          <span class="tech-chip">✉ mahabub@singularitybd.com</span>
+                        </div>
+                      </div>
+                  </div> 
+                </div> 
+
+                <div class="flex justify-between items-center text-[9px] text-slate-400 border-t border-slate-200/60 pt-2"> 
+                  <span>Credentials</span> 
+                  <span class="font-serif">Page 6</span> 
+                </div> 
+              </div> 
+              <div class="absolute right-0 top-0 bottom-0 w-6 crease-shadow-left"></div>
+              <div class="light-glare"></div>
+            </div> 
+          </div>
+
+          <!-- ==================== SHEET 5 (PAGE 7 & BACK COVER) ==================== -->
+          <div class="sheet" style="z-index: 10;">
+            <!-- PAGE 7: CONTACT DETAILS -->
+            <div class="page-face front bg-luxury-paperLight text-slate-800 paper-noise page-depth-right">
+              <div class="absolute inset-0 p-8 flex flex-col justify-between">
+                
+                <div class="space-y-4 overflow-y-auto no-scrollbar pr-1 flex-grow">
+                  <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
+                    <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Interaction</span>
+                    <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter VII</span>
+                  </div>
+
+                  <!-- Profile Section -->
+                  <div class="flex flex-col items-center py-6">
+                     <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-luxury-gold shadow-lg mb-4 bg-slate-200 flex items-center justify-center transition-transform duration-500 hover:scale-105">
+                        <img src="SMS.jpg" alt="Shobo Mozumder" class="w-full h-full object-cover">
+                     </div>
+                     <h2 class="font-serif text-xl font-bold text-slate-900">Shobo Mozumder</h2>
+                     <p class="text-[10px] font-bold text-indigo-700 uppercase tracking-widest mt-1">Software Engineer</p>
+                  </div>
+
+                  <!-- Enhanced Contact Card -->
+                  <div class="space-y-4 pt-2 font-sans text-[11px] text-slate-700 bg-white/60 p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="grid grid-cols-2 gap-3">
+                      <!-- Phone 1 -->
+                      <a href="tel:+8801640703380"
+                         class="flex items-center group transition-colors hover:text-indigo-700  rounded-lg hover:bg-slate-50">
+
+                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-indigo-100 transition-colors">
+                          <i class="fa-solid fa-phone text-amber-600 group-hover:text-indigo-700"></i>
+                        </div>
+
+                        <span class="text-slate-600 font-medium group-hover:text-indigo-700 text-sm">
+                          +880 1640-703380
+                        </span>
+                      </a>
+
+                      <!-- Phone 2 -->
+                      <a href="tel:+8801532441002"
+                         class="flex items-center group transition-colors hover:text-indigo-700 rounded-lg hover:bg-slate-50">
+
+                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-indigo-100 transition-colors">
+                          <i class="fa-solid fa-mobile-screen-button text-amber-600 group-hover:text-indigo-700"></i>
+                        </div>
+
+                        <span class="text-slate-600 font-medium group-hover:text-indigo-700 text-sm">
+                          +880 1532-441002
+                        </span>
+                      </a>
+                    </div>
+                    <a href="mailto:shuvomozumder101@gmail.com" class="flex items-center group transition-colors hover:text-indigo-700">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-indigo-100">
+                        <i class="fa fa-envelope text-luxury-gold group-hover:text-indigo-700"></i>
+                      </div>
+                      shuvomozumder101@gmail.com
+                    </a>
+                    <a href="https://github.com/shuvomozumder101" target="_blank" class="flex items-center group transition-colors hover:text-indigo-700">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-indigo-100">
+                        <i class="fab fa-github text-luxury-gold group-hover:text-indigo-700"></i>
+                      </div>
+                      github.com/shuvomozumder101
+                    </a>
+                    <a href="https://linkedin.com/in/shuvo-mozumder-52b181199" target="_blank" class="flex items-center group transition-colors hover:text-indigo-700">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-3 group-hover:bg-indigo-100">
+                        <i class="fab fa-linkedin text-luxury-gold group-hover:text-indigo-700"></i>
+                      </div>
+                      www.linkedin.com/in/shuvo-mozumder-52b181199/
+                    </a>
+                    <div class="flex items-start group">
+                      <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mr-3 mt-0.5">
+                        <i class="fa fa-map-marker-alt text-luxury-gold"></i>
+                      </div>
+                      <span class="leading-tight pt-1">House: KHA-33/4/P-1, BEPARIPARA, KHILKHET, DHAKA</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-center text-[9px] text-slate-400 border-t border-slate-200/60 pt-2 mt-4">
+                  <span>Contact Details</span>
+                  <span class="font-serif">Page 7</span>
+                </div>
+              </div>
+              <div class="absolute left-0 top-0 bottom-0 w-6 crease-shadow-right"></div>
+              <div class="light-glare"></div>
+            </div>
+
+            <!-- BACK COVER OUTSIDE (Final closing section) -->
+            <div class="page-face back overflow-hidden shadow-2xl border-y border-l border-amber-600/20">
+              <div class="absolute inset-0 bg-luxury-navyCover leather-texture transition-colors duration-500"></div>
+              <div class="relative z-20 h-full flex flex-col justify-center px-7 py-6 text-luxury-gold">
+                    <div class="text-center mb-5">
+                        <span class="text-[9px] uppercase tracking-[0.35em] opacity-70">
+                            Get In Touch
+                          </span>
+
+                        <h2 class="font-serif text-2xl mt-2 text-white">
+                            Contact Me
+                          </h2>
+
+                        <div class="w-16 h-px bg-luxury-gold/40 mx-auto mt-2"></div>
+                      </div>
+
+                    <!-- Glass Card -->
+                      <div class="relative overflow-hidden rounded-3xl max-w-md mx-auto w-full border border-white/10 bg-white/5 backdrop-blur-xl">
+
+                        <!-- Glass Glow -->
+                          <div class="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20 pointer-events-none"></div>
+
+                        <!-- Glass Highlight -->
+                          <div class="absolute -top-16 -left-16 w-40 h-40 rounded-full bg-white/10 blur-3xl"></div>
+
+                          <form id="contactForm" class="relative z-10 p-4 space-y-2">
+
+                            <input
+                              type="text"
+                              name="name"
+                              placeholder="Your Name"
+                              required
+                              class="w-full rounded-xl border border-white/10 bg-white/10 backdrop-blur-md px-4 py-3 text-xs text-white placeholder-white/50 transition-all duration-300 focus:border-yellow-300 focus:bg-white/15 focus:ring-2 focus:ring-yellow-400/20 outline-none">
+
+                            <input
+                              type="email"
+                              name="email"
+                              placeholder="Email Address"
+                              required
+                              class="w-full rounded-xl border border-white/10 bg-white/10 backdrop-blur-md px-4 py-3 text-xs text-white placeholder-white/50 transition-all duration-300 focus:border-yellow-300 focus:bg-white/15 focus:ring-2 focus:ring-yellow-400/20 outline-none">
+
+                           <input
+                              type="text"
+                              name="subject"
+                              placeholder="Subject"
+                              required
+                              class="w-full rounded-xl border border-white/10 bg-white/10 backdrop-blur-md px-4 py-3 text-xs text-white placeholder-white/50 transition-all duration-300 focus:border-yellow-300 focus:bg-white/15 focus:ring-2 focus:ring-yellow-400/20 outline-none">
+
+                            <textarea
+                              rows="4"
+                              name="message"
+                              placeholder="Write your message..."
+                              required
+                              class="w-full rounded-xl border border-white/10 bg-white/10 backdrop-blur-md px-4 py-3 text-xs text-white placeholder-white/50 resize-none transition-all duration-300 focus:border-yellow-300 focus:bg-white/15 focus:ring-2 focus:ring-yellow-400/20 outline-none"></textarea>
+
+
+                            <button id="sendBtn" type="submit"
+                              class="group relative flex h-9 w-full items-center justify-center overflow-hidden rounded-lg bg-gradient-to-r from-yellow-400 via-yellow-300 to-amber-500 text-xs font-semibold text-black shadow-lg transition duration-300 hover:scale-[1.02]">
+                                <i class="fas fa-paper-plane mr-2"></i>Send Message
+                                <div class="absolute inset-0 -translate-x-full bg-white/40 transition duration-700 group-hover:translate-x-full"></div>
+                            </button>
+                          </form>
+                        </div>
+
+                    <!-- Social Links -->
+                      <div class="mt-6 flex justify-center gap-5">
+                        <a href="https://github.com/shuvomozumder101" target="_blank" class="group relative">
+                        <div class="absolute inset-0 rounded-full bg-white/20 blur-lg opacity-0 group-hover:opacity-100 transition"></div>
+                        <div class="relative h-11 w-11 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:scale-110 transition">
+                        <i class="fab fa-github"></i>
+                      </div>
+                      </a>
+                      
+                      <a href="https://linkedin.com/in/shuvo-mozumder-526181199" target="_blank" class="group relative">                      
+                      <div class="absolute inset-0 rounded-full bg-blue-400/20 blur-lg opacity-0 group-hover:opacity-100 transition"></div>
+                      <div class="relative h-11 w-11 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:scale-110 transition">
+                      <i class="fab fa-linkedin"></i></div>                      
+                      </a>
+                      
+                      <a href="mailto:shuvomozumder101@gmail.com"
+                      class="group relative">                      
+                      <div class="absolute inset-0 rounded-full bg-yellow-300/20 blur-lg opacity-0 group-hover:opacity-100 transition"></div>                      
+                      <div class="relative h-11 w-11 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:scale-110 transition"><i class="fas fa-envelope"></i></div>
+                      </a>
+                      
+                      </div>
+
+                    <!-- Footer -->
+                      <div class="mt-5 text-center">
+
+                        <p class="text-[10px] uppercase tracking-[0.35em] text-white/60">
+                            Thank You For Visiting
+                          </p>
+
+                        <p class="mt-1 text-[9px] text-white/40">
+                            Let's build something amazing together.
+                          </p>
+
+                      </div>
+
+                </div>
+              <div class="absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l from-black/60 to-transparent"></div>
+              <div class="light-glare"></div>
+            </div>
+          </div>
+
+        </div> <!-- /Book -->
+      </div> <!-- /Viewport container -->
+
+    </div> <!-- /Viewport wrapper -->
+
+    <!-- FOOTER NAV PANEL -->
+    <footer class="no-print w-full max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center mt-2 pt-3 border-t border-slate-900 space-y-4 sm:space-y-0">
+      
+      <div class="flex space-x-1.5 items-center">
+        <button onclick="bookNavigate(0)" class="tab-marker bg-indigo-600 w-12 h-1.5 rounded-full transition-all duration-300" title="Cover"></button>
+        <button onclick="bookNavigate(1)" class="tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300" title="Bio & Skills Matrix"></button>
+        <button onclick="bookNavigate(2)" class="tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300" title="History & Systems"></button>
+        <button onclick="bookNavigate(3)" class="tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300" title="Applications & Academics"></button>
+        <button onclick="bookNavigate(4)" class="tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300" title="Contact & End Cover"></button>
+      </div>
+
+      <div class="flex items-center space-x-6 text-[10px] text-slate-400 font-sans uppercase tracking-wider">
+        <p class="hidden md:block"><i class="fa fa-keyboard mr-1.5 text-luxury-gold"></i> Arrow Keys to Turn</p>
+        <div class="hidden md:block h-3 w-[1px] bg-slate-800"></div>
+        <p><i class="fa fa-mouse mr-1.5 text-luxury-gold"></i> Drag Page Edge to Flip</p>
+      </div>
+
+    </footer>
+  </main>
+
+<script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+</script>
+  <script>  
+
+    // Global Book State Variables
+    let currentSheetIndex = 0;
+    const sheets = document.querySelectorAll('.sheet');
+    const tabMarkers = document.querySelectorAll('.tab-marker');
+    const totalSheets = sheets.length;
+
+    // Audio Engine configuration (Generates organic page turns procedurally)
+    let audioCtx = null;
+    function playPageTurnSound() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const duration = 0.45;
+        const bufferSize = audioCtx.sampleRate * duration;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        // Generate noise profiles
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+
+        // Bandpass sweeps for realistic paper simulation
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1100, audioCtx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(160, audioCtx.currentTime + duration);
+        filter.Q.value = 1.2;
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        source.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        source.start();
+      } catch (err) {
+        console.warn("Audio Context sweep blocked by active browser policy.", err);
+      }
+    }
+
+    // Skills indicator animation
+    function triggerSkillsAnimation(active) {
+      const fills = document.querySelectorAll('.skill-bar-fill');
+      fills.forEach(bar => {
+        if (active) {
+          bar.style.width = bar.getAttribute('data-target-width');
+        } else {
+          bar.style.width = '0%';
+        }
+      });
+    }
+
+    // Adaptive Sizing & 3D Layer sorting logic
+    function updateBookRendering() {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const bookContainer = document.querySelector('.perspective-container');
+      const isMobile = viewportWidth < 768;
+
+      if (isMobile) {
+        // Clear desktop custom scaling transformations on mobile
+        if (bookContainer) {
+          bookContainer.style.transform = '';
+        }
+        return;
+      }
+
+      // Desktop/Laptop scale matching engine to ensure zero clipping
+      
+      const targetWidth = 400;
+      const targetHeight = 120;
+      
+      const header = document.querySelector('header');
+      const footer = document.querySelector('footer');
+      const headerHeight = header ? header.offsetHeight : 60;
+      const footerHeight = footer ? footer.offsetHeight : 60;
+      
+      const availableWidth = viewportWidth * 0.92; // use 92% of screen width dynamically
+      const availableHeight = viewportHeight - headerHeight - footerHeight - 48; // safe padding
+
+      let scaleX = availableWidth / targetWidth;
+      let scaleY = availableHeight / targetHeight;
+      let scale = Math.min(scaleX, scaleY);
+      
+
+      // Keep scaling bounded between 0.45 and 1.0 for premium aesthetics
+      scale = Math.min(1.0, Math.max(0.45, scale));
+
+      if (bookContainer) {
+        bookContainer.style.transform = `scale(${scale})`;
+        bookContainer.style.transformOrigin = 'center center';
+      }
+
+      // Handle Page sheet rotations & overlaps
+      sheets.forEach((sheet, idx) => {
+        if (idx < currentSheetIndex) {
+          sheet.classList.add('flipped');
+          sheet.style.zIndex = 100 + idx;
+        } else {
+          sheet.classList.remove('flipped');
+          sheet.style.zIndex = 100 - idx;
+        }
+      });
+
+      // Animate progress bars on Page 2 (sheet index 1)
+      if (currentSheetIndex === 1) {
+        setTimeout(() => triggerSkillsAnimation(true), 400);
+      } else {
+        triggerSkillsAnimation(false);
+      }
+
+      // Sync active progress bars on navigation dots
+      tabMarkers.forEach((marker, idx) => {
+        if (idx === currentSheetIndex) {
+          marker.className = "tab-marker bg-indigo-600 w-12 h-1.5 rounded-full transition-all duration-300";
+        } else {
+          marker.className = "tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300 hover:bg-slate-500";
+        }
+      });
+    }
+
+    // Navigation control hooks
+    function nextSheet() {
+      if (window.innerWidth < 768) return; // Swipes operate scrolling on mobile
+      if (currentSheetIndex < totalSheets) {
+        playPageTurnSound();
+        currentSheetIndex++;
+        updateBookRendering();
+      }
+    }
+
+    // Navigation back control
+    function prevSheet() {
+      if (window.innerWidth < 768) return;
+      if (currentSheetIndex > 0) {
+        playPageTurnSound();
+        currentSheetIndex--;
+        updateBookRendering();
+      }
+    }
+
+    function bookNavigate(sheetIndex) {
+      if (sheetIndex >= 0 && sheetIndex <= totalSheets) {
+        if (window.innerWidth < 768) {
+          // Smooth scroll to card on Phone layout
+          const targetSheet = sheets[sheetIndex];
+          if (targetSheet) {
+            targetSheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        } else {
+          // Smooth 3D turn on Laptop/Desktop layout
+          if (sheetIndex !== currentSheetIndex) {
+            playPageTurnSound();
+            currentSheetIndex = sheetIndex;
+            updateBookRendering();
+          }
+        }
+      }
+    }
+
+    // Active Tab Tracker on Mobile scrolling
+    window.addEventListener('scroll', () => {
+      if (window.innerWidth >= 768) return;
+      
+      const scrollPosition = window.scrollY + (window.innerHeight / 2);
+      
+      sheets.forEach((sheet, index) => {
+        const rect = sheet.getBoundingClientRect();
+        const absoluteTop = window.scrollY + rect.top;
+        const absoluteBottom = absoluteTop + rect.height;
+        
+        if (scrollPosition >= absoluteTop && scrollPosition <= absoluteBottom) {
+          tabMarkers.forEach((marker, idx) => {
+            if (idx === index) {
+              marker.className = "tab-marker bg-indigo-600 w-12 h-1.5 rounded-full transition-all duration-300";
+            } else {
+              marker.className = "tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300";
+            }
+          });
+        }
+      });
+    });
+
+    // Touch & Mouse drag boundary configuration (Strictly outer 80px book margins only)
+    let dragStartX = null;
+    let dragStartTime = 0;
+    let dragCurrentX = 0;
+    let isDragging = false;
+
+    const isDragStartAllowed = (clientX, target) => {
+      // Always allow flipping/grabbing on the leather covers
+      if (target.closest('#coverFront') || target.closest('.page-face.back:last-child')) {
+        return true;
+      }
+
+      const bookContainer = document.querySelector('.perspective-container');
+      if (!bookContainer) return false;
+
+      // Calculate global horizontal position relative to the entire book container spread
+      const rect = bookContainer.getBoundingClientRect();
+      const clickXGlobal = clientX - rect.left;
+
+      // Left Outer Peeling Margin (left-most 80px) or Right Outer Peeling Margin (right-most 80px)
+      const leftEdgePeel = clickXGlobal < 80;
+      const rightEdgePeel = clickXGlobal > (rect.width - 80);
+
+      // If clicked outside outer page edges, reject drag. This guarantees 100% natural text selection inside reading sheets.
+      return leftEdgePeel || rightEdgePeel;
+    };
+
+    sheets.forEach((sheet) => {
+      sheet.addEventListener('mousedown', (e) => {
+        if (e.target.closest('input, textarea, button, a, i')) return;
+        if (!isDragStartAllowed(e.clientX, e.target)) return;
+
+        dragStartX = e.clientX;
+        dragCurrentX = e.clientX;
+        dragStartTime = performance.now();
+        isDragging = true;
+      });
+
+      sheet.addEventListener('touchstart', (e) => {
+        if (e.target.closest('input, textarea, button, a, i')) return;
+
+        const clientX = e.touches[0].clientX;
+        if (!isDragStartAllowed(clientX, e.target)) return;
+        
+        dragStartX = clientX;
+        dragCurrentX = clientX;
+        dragStartTime = performance.now();
+        isDragging = true;
+      }, { passive: true });
+    });
+
+    window.addEventListener("mousemove", (e) => {
+
+      if (!isDragging) return;
+
+      dragCurrentX = e.clientX;
+
+    });
+
+    window.addEventListener("touchmove",(e)=>{
+
+      if(!isDragging) return;
+
+      dragCurrentX = e.touches[0].clientX;
+
+    },{passive:true});
+
+    function finishDrag() {
+
+      if (!isDragging) return;
+
+      const distance = dragCurrentX - dragStartX;
+
+      const elapsed = performance.now() - dragStartTime;
+
+      const velocity = Math.abs(distance) / elapsed;
+
+      const FAST_FLICK = 0.8;
+
+      const LONG_DRAG = 140;
+
+      if (velocity > FAST_FLICK) {
+
+          if (distance < 0)
+              nextSheet();
+          else
+              prevSheet();
+
+      }
+      else if (Math.abs(distance) > LONG_DRAG) {
+
+          if (distance < 0)
+              nextSheet();
+          else
+              prevSheet();
+
+      }
+
+      dragStartX = null;
+      dragCurrentX = 0;
+      dragStartTime = 0;
+      isDragging = false;
+
+    }
+
+
+    window.addEventListener("mouseup", finishDrag);
+    window.addEventListener("touchend", finishDrag);
+
+    // Keyboard controls
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') nextSheet();
+      if (e.key === 'ArrowLeft') prevSheet();
+    });
+
+    // SMOOTH HORIZONTAL SLIDE TRANSITION PROJECT SWITCHER
+        window.showProject = function(project){  
+            const track = document.getElementById("projects-track");         
+
+              let offset = 0;
+
+              switch(project){
+
+                  case "dcci":
+                      offset = 0;
+                      break;
+
+                  case "aura":
+                      offset = -33.3333;
+                      break;
+
+                  case "hbl":
+                      offset = -66.6666;
+                      break;
+              }
+
+              track.style.transform = `translateY(${offset}%)`;
+
+              // Active Button
+              document.querySelectorAll(".project-tab").forEach(btn=>{
+                  btn.classList.remove("active");
+              });
+
+              document.getElementById("btn-" + project).classList.add("active");
+        };
+
+    // Theme switching configurations
+    const themes = [
+      { name: "Midnight Library", cover: "bg-luxury-navyCover", bg: "from-slate-950 via-[#0a0c10] to-slate-950" },
+      { name: "Crimson Study", cover: "bg-luxury-crimsonCover", bg: "from-stone-950 via-[#130909] to-stone-950" },
+      { name: "Forest Archives", cover: "bg-luxury-forestCover", bg: "from-zinc-950 via-[#070e0a] to-zinc-950" }
+    ];
+    let activeThemeIndex = 0;
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      activeThemeIndex = (activeThemeIndex + 1) % themes.length;
+      const theme = themes[activeThemeIndex];
+      document.getElementById('themeName').innerText = theme.name;
+
+      const leathers = document.querySelectorAll('.leather-texture');
+      leathers.forEach((element) => {
+        if (element.classList.contains('bg-luxury-navyCover') || element.classList.contains('bg-luxury-crimsonCover') || element.classList.contains('bg-luxury-forestCover')) {
+          element.classList.remove('bg-luxury-navyCover', 'bg-luxury-crimsonCover', 'bg-luxury-forestCover');
+          element.classList.add(theme.cover);
+        }
+      });
+
+      const bgOverlay = document.querySelector('.absolute.inset-0.z-0');
+      if (bgOverlay) {
+        bgOverlay.className = `absolute inset-0 z-0 bg-gradient-to-tr ${theme.bg} pointer-events-none overflow-hidden`;
+      }
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', prevSheet);
+    document.getElementById('nextBtn').addEventListener('click', nextSheet);
+
+    window.onload = function() {
+      updateBookRendering();
+    };
+
+    window.addEventListener('resize', () => {
+      updateBookRendering();
+    });
+
+         
+
+      emailjs.init({
+          publicKey: "IDEfYEaKsLnqo_5Q3"
+      });
+
+      const form = document.getElementById("contactForm");
+
+      form.addEventListener("submit", function(e){
+
+        console.log(this)
+      
+          e.preventDefault();
+
+          emailjs.sendForm(
+              "service_opikbhu",
+              "template_b4zio0b",
+              this
+          )
+          .then(function(){
+          
+              alert("Message Sent!");
+
+              form.reset();
+
+          })
+          .catch(function(error){
+          
+              console.log(error);
+
+              alert(error.text || JSON.stringify(error));
+
+          });
+
+      });
+
+  </script>
+</body>
+</html>
