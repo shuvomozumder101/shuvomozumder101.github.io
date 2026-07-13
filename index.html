@@ -1164,6 +1164,268 @@
         background-position:300% 50%;
     }
 }
+
+.timeline-card{
+    position:relative;
+    padding:18px;
+    margin-bottom:0;
+
+    border-radius:18px;
+
+    background:rgba(255,255,255,.18);
+
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.35);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.45),
+        0 10px 25px rgba(15,23,42,.08);
+
+    overflow:hidden;
+
+    transition:.35s ease;
+}
+
+.timeline-card::before{
+    content:"";
+    position:absolute;
+
+    top:-120%;
+    left:-100%;
+
+    width:55%;
+    height:320%;
+
+    background:linear-gradient(
+        120deg,
+        transparent,
+        rgba(255,255,255,.6),
+        transparent
+    );
+
+    transform:rotate(25deg);
+
+    animation:shine 7s linear infinite;
+}
+
+.timeline-card::after{
+    content:"";
+    position:absolute;
+    inset:0;
+
+    border-radius:inherit;
+    padding:2px;
+
+    background:linear-gradient(
+        45deg,
+        rgba(255,255,255,.4),
+        rgba(99,102,241,.35),
+        rgba(255,255,255,.4)
+    );
+
+    background-size:300% 300%;
+
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+
+    -webkit-mask-composite:xor;
+            mask-composite:exclude;
+
+    animation:borderFlow 8s linear infinite;
+
+    pointer-events:none;
+}
+
+.timeline-card:hover{
+     transform:translateX(4px);
+
+    box-shadow:
+        0 18px 35px rgba(79,70,229,.18),
+        inset 0 1px 0 rgba(255,255,255,.6);
+}
+
+.timeline-date{
+    padding:4px 10px;
+
+    border-radius:999px;
+
+    background:rgba(99,102,241,.12);
+
+    color:#4338ca;
+
+    font-size:10px;
+    font-weight:700;
+
+    border:1px solid rgba(99,102,241,.2);
+}
+
+.company{
+    color:#78350f;
+    font-size:11px;
+    font-weight:700;
+}
+
+.company span{
+    color:#475569;
+    font-weight:500;
+}
+
+.border-l{
+    border-left:2px solid rgba(99,102,241,.25) !important;
+}
+
+.back-cover-glass{
+    position:relative;
+    overflow:hidden;
+}
+
+.back-cover-glass::before{
+    content:"";
+    position:absolute;
+    inset:0;
+
+    background:
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(255,255,255,.14),
+            rgba(255,255,255,.05) 25%,
+            transparent 55%
+        ),
+
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.08),
+            rgba(255,255,255,.03),
+            transparent 65%
+        );
+
+    pointer-events:none;
+    z-index:2;
+}
+
+.back-cover-glass::after{
+    content:"";
+    position:absolute;
+
+    top:-30%;
+    left:-80%;
+
+    width:45%;
+    height:220%;
+
+    background:linear-gradient(
+        115deg,
+        transparent,
+        rgba(255,255,255,.04),
+        rgba(255,255,255,.12),
+        rgba(255,255,255,.04),
+        transparent
+    );
+
+    transform:rotate(20deg);
+
+    animation:glassMove 12s ease-in-out infinite;
+
+    pointer-events:none;
+
+    z-index:3;
+}
+
+@keyframes glassMove{
+
+    0%{
+        left:-80%;
+    }
+
+    45%{
+        left:130%;
+    }
+
+    100%{
+        left:130%;
+    }
+
+}
+
+.directory-item{
+
+    width:100%;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:12px 16px;
+
+    border-radius:14px;
+
+    background:rgba(255,255,255,.05);
+
+    border:1px solid rgba(255,255,255,.06);
+
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+
+    transition:.35s ease;
+
+    position:relative;
+
+    overflow:hidden;
+}
+
+.directory-item::before{
+
+    content:"";
+
+    position:absolute;
+    inset:0;
+
+    background:linear-gradient(
+        135deg,
+        rgba(255,255,255,.12),
+        rgba(255,255,255,.02),
+        transparent 70%
+    );
+
+    pointer-events:none;
+}
+
+.directory-item:hover{
+
+    transform:translateX(8px);
+
+    background:rgba(255,255,255,.08);
+
+    border-color:rgba(251,191,36,.25);
+
+    box-shadow:
+        0 10px 20px rgba(0,0,0,.25);
+}
+
+.directory-item span:first-child{
+
+    color:#e5e7eb;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+    transition:.3s;
+}
+
+.directory-item:hover span:first-child{
+
+    color:#fbbf24;
+}
+
+.directory-item .border-b{
+
+    border-color:rgba(255,255,255,.15)!important;
+}
+
   </style>
 </head>
 
@@ -1310,7 +1572,7 @@
             </div>
 
             <!-- BACK COVER 1: COMPREHENSIVE DIRECTORY -->
-            <div class="page-face back overflow-hidden shadow-2xl">
+            <div class="page-face back back-cover-glass overflow-hidden shadow-2xl">
               <div class="absolute inset-0 bg-slate-950 leather-texture opacity-95"></div>
               <div class="absolute inset-4 border border-slate-800/80 rounded-md"></div>
               
@@ -1321,35 +1583,40 @@
                 </div>
 
                 <nav class="space-y-3 max-w-xs mx-auto text-xs my-auto w-full font-sans">
-                  <button onclick="bookNavigate(1)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                  <button onclick="bookNavigate(1)" class="directory-item group">
                     <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">01 • Profile & Bio</span>
                     <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
                     <span class="font-serif italic text-slate-400">Page 1</span>
                   </button>
-                  <button onclick="bookNavigate(1)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                  <button onclick="bookNavigate(2)" class="directory-item group">
                     <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">02 • Tech Stack Matrix</span>
                     <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
                     <span class="font-serif italic text-slate-400">Page 2</span>
                   </button>
-                  <button onclick="bookNavigate(2)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                  <button onclick="bookNavigate(2)" class="directory-item group">
                     <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">03 • Employment History</span>
                     <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
                     <span class="font-serif italic text-slate-400">Page 3</span>
                   </button>
-                  <button onclick="bookNavigate(2)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                  <button onclick="bookNavigate(3)" class="directory-item group">
                     <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">04 • Production Systems</span>
                     <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
                     <span class="font-serif italic text-slate-400">Page 4</span>
                   </button>
-                  <button onclick="bookNavigate(3)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                  <button onclick="bookNavigate(3)" class="directory-item group">
                     <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">05 • Applications Utility</span>
                     <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
                     <span class="font-serif italic text-slate-400">Page 5</span>
                   </button>
-                  <button onclick="bookNavigate(3)" class="w-full flex justify-between items-baseline hover:text-luxury-gold group transition-all">
+                  <button onclick="bookNavigate(4)" class="directory-item group">
                     <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">06 • Academic & Reference</span>
                     <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
                     <span class="font-serif italic text-slate-400">Page 6</span>
+                  </button>
+                  <button onclick="bookNavigate(5)" class="directory-item group">
+                    <span class="group-hover:translate-x-1 transition-all uppercase tracking-wide">07 • Contact Me</span>
+                    <span class="border-b border-dashed border-slate-800 flex-grow mx-2 h-1"></span>
+                    <span class="font-serif italic text-slate-400">Page 7</span>
                   </button>
                 </nav>
 
@@ -1422,7 +1689,7 @@
             <div class="page-face back bg-luxury-paperLight text-slate-800 paper-noise page-depth-left">
               <div class="absolute inset-0 p-8 flex flex-col justify-between">
                 
-                <div class="space-y-2 overflow-y-auto no-scrollbar pr-1 flex-grow">
+                <div class="space-y-2 overflow-y-auto overflow-x-visible no-scrollbar pr-1 flex-grow">
                   <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
                     <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter II</span>
                     <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Capabilities</span>
@@ -1561,7 +1828,7 @@
             <div class="page-face front bg-luxury-paperLight text-slate-800 paper-noise page-depth-right">
               <div class="absolute inset-0 p-8 flex flex-col justify-between">
                 
-                <div class="space-y-4 overflow-y-auto no-scrollbar pr-1 flex-grow">
+                <div class="space-y-4 overflow-y-auto overflow-x-visible no-scrollbar pr-1 flex-grow">
                   <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
                     <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Timeline</span>
                     <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter III</span>
@@ -1570,18 +1837,18 @@
                   <h2 class="font-serif text-lg font-bold text-slate-900">Work Experience</h2>
 
                   <!-- Chronology Map -->
-                  <div class="space-y-4 relative pl-3.5 border-l border-slate-300">
+                  <div class="space-y-2 relative pl-4 border-l">
                     
                     <!-- Singularity Software Developer -->
-                    <div class="relative">
+                    <div class="timeline-card">
                       <div class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-indigo-900 border-2 border-luxury-paperLight"></div>
                       <div class="flex justify-between items-baseline mb-0.5">
                         <h3 class="text-[12px] font-bold text-slate-900 uppercase">Software Developer (.NET)</h3>
-                        <span class="text-[10px] font-semibold text-indigo-900 bg-indigo-50 px-1.5 py-0.5 rounded">Dec 2024 - Present</span>
+                        <span class="timeline-date">Dec 2024 - Present</span>
                       </div>
-                      <p class="text-[10px] font-bold text-amber-950">Singularity Ltd. <span class="text-slate-500 text-[10px] font-medium text-indigo-950">(Tejgaon I/A, Dhaka)</span></p>
+                      <p class="company">Singularity Ltd. <span>(Tejgaon I/A, Dhaka)</span></p>
                       
-                      <ul class="list-disc pl-3 text-[10px] text-slate-600 space-y-1 mt-1 font-serif text-justify">
+                      <ul class="list-disc pl-4 text-[10px] text-slate-600 space-y-1 mt-2 font-serif text-justify">
                         <li>Led full-stack application development using ASP.NET Core and React, focusing on scalability, performance, and maintainability</li>
                         <li>Designed complex real-time tracking dashboards and reporting tools.</li>
                         <li>Developed dynamic PDF generation solutions using QuestPDF's fluent C# API for complex business documents and reports.</li>
@@ -1589,15 +1856,15 @@
                       </ul>
                     </div>
 
-                    <div class="relative">
+                    <div class="timeline-card">
                       <div class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-indigo-500 border-2 border-luxury-paperLight"></div>
-                      <div class="flex justify-between items-baseline mb-0.5">
+                      <div class="flex justify-between items-baseline mb-1">
                         <h3 class="text-[12px] font-bold text-slate-900 uppercase">Jr. Software Developer (.NET)</h3>
-                        <span class="text-[10px] font-semibold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">Dec 2021 - Dec 2024</span>
+                        <span class="timeline-date">Dec 2021 - Dec 2024</span>
                       </div>
-                      <p class="text-[10px] font-bold text-amber-950">Singularity Ltd. <span class="text-slate-500 text-[10px] font-medium text-indigo-950">(Tejgaon I/A, Dhaka)</span></p>
+                      <p class="company">Singularity Ltd. <span>(Tejgaon I/A, Dhaka)</span></p>
                       
-                      <ul class="list-disc pl-3 text-[10px] text-slate-600 space-y-1 mt-1 font-serif text-justify">
+                      <ul class="list-disc pl-4 text-[10px] text-slate-600 space-y-1 mt-2 font-serif text-justify">
                         <li>Lead research and development using ASP.NET Core framework.</li>
                         <li>Refactored legacy database components, optimizing complex stored procedures in SQL Server/Oracle.</li>
                         <li>Designed complex real-time tracking dashboards and reporting tools.</li>
@@ -1606,15 +1873,15 @@
                     </div>
 
                     <!-- Singularity Intern -->
-                    <div class="relative">
+                    <div class="timeline-card">
                       <div class="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-slate-400 border-2 border-luxury-paperLight"></div>
                       <div class="flex justify-between items-baseline mb-0.5">
                         <h3 class="text-[12px] font-bold text-slate-900 uppercase">Intern Software Developer (.NET)</h3>
-                        <span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">Sep 2021 - Dec 2021</span>
+                        <span class="timeline-date">Sep 2021 - Dec 2021</span>
                       </div>
-                      <p class="text-[10px] font-bold text-amber-950">Singularity Ltd. <span class="text-slate-500 text-[10px] font-medium text-indigo-950">(Baridhara DOHS, Dhaka)</span></p>
+                      <p class="company">Singularity Ltd. <span>(Baridhara DOHS, Dhaka)</span></p>
                       
-                      <ul class="list-disc pl-3 text-[10px] text-slate-600 space-y-1 mt-1 font-serif text-justify">
+                      <ul class="list-disc pl-4 text-[10px] text-slate-600 space-y-1 mt-2 font-serif text-justify">
                         <li>Constructed robust automated printing components and visual charts using RDLC.</li>
                         <li>Developed clean Microsoft Excel content generators and interactive table layouts.</li>
                       </ul>
@@ -1679,7 +1946,7 @@
                     <div id="projects-track" class="h-[300%] flex flex-col transition-transform duration-700 ease-in-out select-text">
                       
                       <!-- Slide 1: DCCI -->
-                      <div id="project-dcci"class="h-1/3 w-full shrink-0 pr-2 overflow-y-auto no-scrollbar flex flex-col justify-start">
+                      <div id="project-dcci"class="h-1/3 w-full shrink-0 pr-2 overflow-y-auto overflow-x-visible no-scrollbar flex flex-col justify-start">
                         <div class="enterprise-card">         
                           <div class="flex justify-between items-center">
                               <h4 class="project-title"><i class="fa fa-building"></i>DCCI ERP <small>(Dhaka Chamber of Commerce & Industry)</small></h4>
@@ -1722,7 +1989,7 @@
                       </div>
 
                       <!-- Slide 2: AURA QAD -->
-                      <div id="project-aura"class="h-1/3 w-full shrink-0 pr-2 overflow-y-auto no-scrollbar flex flex-col justify-start">
+                      <div id="project-aura"class="h-1/3 w-full shrink-0 pr-2 overflow-y-auto overflow-x-visible no-scrollbar flex flex-col justify-start">
                       
                           <div class="enterprise-card">      
                               <div class="flex justify-between items-center">                              
@@ -1768,7 +2035,7 @@
                       </div>
 
                       <!-- Slide 3: HBL Email & SMS -->
-                      <div id="project-hbl"class="h-1/3 w-full shrink-0 pr-2 overflow-y-auto no-scrollbar flex flex-col justify-start">
+                      <div id="project-hbl"class="h-1/3 w-full shrink-0 pr-2 overflow-y-auto overflow-x-visible no-scrollbar flex flex-col justify-start">
                           <div class="enterprise-card">        
                               <div class="flex justify-between items-center">                              
                                   <h4 class="project-title"><i class="fa fa-envelope"></i>HBL Email & SMS System<small>(Heidelberg Bangladesh Limited)</small>
@@ -1831,7 +2098,7 @@
             <div class="page-face front bg-luxury-paperLight text-slate-800 paper-noise page-depth-right">
               <div class="absolute inset-0 p-8 flex flex-col justify-between">
                 
-                <div class="space-y-2 overflow-y-auto no-scrollbar pr-1 flex-grow">
+                <div class="space-y-2 overflow-y-auto overflow-x-visible no-scrollbar pr-1 flex-grow">
                   <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
                     <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Utilities</span>
                     <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter V</span>
@@ -1958,7 +2225,7 @@
             <!-- PAGE 6: EDUCATION & PROFESSIONAL REFERENCE MATRIX -->
             <div class="page-face back bg-luxury-paperLight text-slate-800 paper-noise page-depth-left"> 
               <div class="absolute inset-0 p-8 flex flex-col justify-between"> 
-                <div class="space-y-3.5 overflow-y-auto no-scrollbar pr-1 flex-grow"> 
+                <div class="space-y-3.5 overflow-y-auto overflow-x-visible no-scrollbar pr-1 flex-grow"> 
                   <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5"> 
                     <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter VI</span> 
                     <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Endorsements</span> 
@@ -2037,7 +2304,7 @@
                       </div>
                       <div class="enterprise-card">                      
                         <h4 class="project-title">
-                          <i class="fa fa-user-graduate"></i>Mr. Shafikul Islam</h4>
+                          <i class="fa fa-user-tie"></i>Mr. Shafikul Islam</h4>
                           <hr>
                         <p>                          
                           <strong>Team Leader</strong><br>
@@ -2052,7 +2319,7 @@
                       </div>
                       <div class="enterprise-card">                      
                         <h4 class="project-title">
-                          <i class="fa fa-user-graduate"></i>Mr. Mahamub Alam</h4>
+                          <i class="fa fa-user-tie"></i>Mr. Mahamub Alam</h4>
                           <hr>
                         <p>                          
                           <strong>Sr. Software Engineering</strong><br>
@@ -2084,7 +2351,7 @@
             <div class="page-face front bg-luxury-paperLight text-slate-800 paper-noise page-depth-right">
               <div class="absolute inset-0 p-8 flex flex-col justify-between">
                 
-                <div class="space-y-2 overflow-y-auto no-scrollbar pr-1 flex-grow">
+                <div class="space-y-2 overflow-y-auto overflow-x-visible no-scrollbar pr-1 flex-grow">
                   <div class="flex justify-between items-baseline border-b border-amber-800/10 pb-1.5">
                     <span class="font-serif italic text-amber-900/60 text-xs font-semibold">Interaction</span>
                     <span class="text-[9px] uppercase tracking-widest text-slate-400">Chapter VII</span>
@@ -2285,13 +2552,14 @@
 
     <!-- FOOTER NAV PANEL -->
     <footer class="no-print w-full max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center mt-2 pt-3 border-t border-slate-900 space-y-4 sm:space-y-0">
-      
       <div class="flex space-x-1.5 items-center">
-        <button onclick="bookNavigate(0)" class="tab-marker bg-indigo-600 w-12 h-1.5 rounded-full transition-all duration-300" title="Cover"></button>
-        <button onclick="bookNavigate(1)" class="tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300" title="Bio & Skills Matrix"></button>
-        <button onclick="bookNavigate(2)" class="tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300" title="History & Systems"></button>
-        <button onclick="bookNavigate(3)" class="tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300" title="Applications & Academics"></button>
-        <button onclick="bookNavigate(4)" class="tab-marker bg-slate-700 w-4 h-1.5 rounded-full transition-all duration-300" title="Contact & End Cover"></button>
+        <button class="tab-marker active" onclick="bookNavigate(1)">01 • Profile & Bio</button>      
+        <button class="tab-marker" onclick="bookNavigate(2)">02 • Tech Stack Matrix</button>      
+        <button class="tab-marker" onclick="bookNavigate(2)">03 • Employment History</button>      
+        <button class="tab-marker" onclick="bookNavigate(3)">04 • Production Systems</button>      
+        <button class="tab-marker" onclick="bookNavigate(3)">05 • Applications Utility</button>      
+        <button class="tab-marker" onclick="bookNavigate(4)">06 • Academic & Reference</button>      
+        <button class="tab-marker" onclick="bookNavigate(5)">07 • Contact Me</button>
       </div>
 
       <div class="flex items-center space-x-6 text-[10px] text-slate-400 font-sans uppercase tracking-wider">
@@ -2358,18 +2626,6 @@
         console.warn("Audio Context sweep blocked by active browser policy.", err);
       }
     }
-
-    // Skills indicator animation
-    // function triggerSkillsAnimation(active) {
-      // const fills = document.querySelectorAll('.skill-bar-fill');
-      // fills.forEach(bar => {
-        // if (active) {
-          // bar.style.width = bar.getAttribute('data-target-width');
-        // } else {
-          // bar.style.width = bar.getAttribute('data-target-width');
-        // }
-      // });
-    // }
 
 function triggerSkillsAnimation(active) {
   const fills = document.querySelectorAll('.skill-bar-fill');
