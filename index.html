@@ -140,8 +140,8 @@
       flex-direction: column;
       box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.08);
       border-radius: 0 12px 12px 0;
-      user-select: text !important;
-      -webkit-user-select: text !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
       cursor: default;
     }
 
@@ -243,7 +243,20 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+
     
+    .page-face.front,
+.page-face.back {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.page-face.front:active,
+.page-face.back:active {
+  cursor: grabbing;
+}
+
     /* Responsive Flat Scroll Book State on Mobile to ensure perfect readability */
     @media (max-width: 767px) {
       .perspective-container {
@@ -517,8 +530,7 @@
 
       .enterprise-card{
           position:relative;
-          overflow:hidden;
-
+          overflow:visible;
           padding:16px;
 
           border-radius:18px;
@@ -1981,6 +1993,7 @@
                           <div class="flex flex-wrap gap-2 mt-2">
                              <span class="tech-chip">ASP.NET Core</span>
                              <span class="tech-chip">React</span>
+                             <span class="tech-chip">REST API</span>
                              <span class="tech-chip">MSSQL</span>
                              <span class="tech-chip">QuestPDF</span>
                           </div>
@@ -2023,13 +2036,10 @@
                               <div class="flex flex-wrap gap-2 mt-2">                              
                                   <span class="tech-chip">C#</span>                      
                                   <span class="tech-chip">ASP.NET Core MVC</span>                      
-                                  <span class="tech-chip">SQL Server</span>                      
-                                  <span class="tech-chip">Oracle</span>                      
+                                  <span class="tech-chip">SQL Server / Oracle</span>                      
                                   <span class="tech-chip">JavaScript</span>                      
-                                  <span class="tech-chip">jQuery</span>                      
                                   <span class="tech-chip">AJAX</span>                      
-                                  <span class="tech-chip">Chart.js</span>                      
-                                  <span class="tech-chip">QAD ERP</span>                      
+                                  <span class="tech-chip">Chart.js</span>                    
                               </div>                      
                           </div>                      
                       </div>
@@ -2072,9 +2082,7 @@
                                   <span class="tech-chip">REST API</span>
                                   <span class="tech-chip">SMS Gateway</span>
                                   <span class="tech-chip">Entity Framework Core</span>
-                                  <span class="tech-chip">HTML & CSS</span>
                                   <span class="tech-chip">JavaScript</span>
-                                  <span class="tech-chip">jQuery</span>
                               </div>
                           </div>
                       </div>    
@@ -2131,14 +2139,13 @@
                             • Optimized SQL Server queries and database performance.
                         </p>
                         <h5 class="section-heading">Technologies</h5>
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            <span class="tech-chip">ASP.NET Core MVC</span>
+                        <div class="flex flex-wrap gap-2 mt-2">                            
                             <span class="tech-chip">C#</span>
+                            <span class="tech-chip">ASP.NET Core MVC</span>
                             <span class="tech-chip">SQL Server</span>
                             <span class="tech-chip">REST API</span>
                             <span class="tech-chip">JavaScript</span>
-                            <span class="tech-chip">jQuery</span>
-                            <span class="tech-chip">Bootstrap</span>
+                            <span class="tech-chip">HTML / CSS / Bootstrap</span>
                         </div>
                     </div>
                   
@@ -2167,14 +2174,13 @@
                         </p>
                         <h5 class="section-heading">Technologies</h5>
 
-                        <div class="flex flex-wrap gap-2 mt-2">                        
-                            <span class="tech-chip">ASP.NET Core MVC</span>
+                        <div class="flex flex-wrap gap-2 mt-2">                            
                             <span class="tech-chip">C#</span>
+                            <span class="tech-chip">ASP.NET Core MVC</span>
                             <span class="tech-chip">SignalR</span>
                             <span class="tech-chip">SQL Server</span>
                             <span class="tech-chip">JavaScript</span>
-                            <span class="tech-chip">jQuery</span>
-                            <span class="tech-chip">Bootstrap</span>
+                            <span class="tech-chip">HTML / CSS / Bootstrap</span>
                         </div>
                     </div>
                   
@@ -2202,13 +2208,12 @@
                             • Enhanced application performance and overall user experience.
                         </p>                    
                         <h5 class="section-heading">Technologies</h5>                    
-                        <div class="flex flex-wrap gap-2 mt-2">                        
-                            <span class="tech-chip">ASP.NET Core MVC</span>                    
-                            <span class="tech-chip">C#</span>                    
+                        <div class="flex flex-wrap gap-2 mt-2">                                              
+                            <span class="tech-chip">C#</span>
+                            <span class="tech-chip">ASP.NET Core MVC</span>                     
                             <span class="tech-chip">SQL Server</span>                         
-                            <span class="tech-chip">JavaScript</span>                    
-                            <span class="tech-chip">jQuery</span>                    
-                            <span class="tech-chip">Bootstrap</span>                    
+                            <span class="tech-chip">JavaScript</span>                  
+                            <span class="tech-chip">HTML / CSS / Bootstrap</span>                    
                         </div>                    
                     </div>                 
                   </div>                
@@ -2553,13 +2558,13 @@
     <!-- FOOTER NAV PANEL -->
     <footer class="no-print w-full max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center mt-2 pt-3 border-t border-slate-900 space-y-4 sm:space-y-0">
       <div class="flex space-x-1.5 items-center">
-        <button class="tab-marker active" onclick="bookNavigate(1)">01 • Profile & Bio</button>      
-        <button class="tab-marker" onclick="bookNavigate(2)">02 • Tech Stack Matrix</button>      
-        <button class="tab-marker" onclick="bookNavigate(2)">03 • Employment History</button>      
-        <button class="tab-marker" onclick="bookNavigate(3)">04 • Production Systems</button>      
-        <button class="tab-marker" onclick="bookNavigate(3)">05 • Applications Utility</button>      
-        <button class="tab-marker" onclick="bookNavigate(4)">06 • Academic & Reference</button>      
-        <button class="tab-marker" onclick="bookNavigate(5)">07 • Contact Me</button>
+        <button class="tab-marker active" onclick="bookNavigate(1)">01</button>      
+        <button class="tab-marker" onclick="bookNavigate(2)">02</button>      
+        <button class="tab-marker" onclick="bookNavigate(2)">03</button>      
+        <button class="tab-marker" onclick="bookNavigate(3)">04</button>      
+        <button class="tab-marker" onclick="bookNavigate(3)">05</button>      
+        <button class="tab-marker" onclick="bookNavigate(4)">06</button>      
+        <button class="tab-marker" onclick="bookNavigate(5)">07</button>
       </div>
 
       <div class="flex items-center space-x-6 text-[10px] text-slate-400 font-sans uppercase tracking-wider">
